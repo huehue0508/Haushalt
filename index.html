@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#131316">
+<title>🏠 Haushalt</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSGF1c2hhbHQiLCJzaG9ydF9uYW1lIjoiSGF1c2hhbHQiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzEzMTMxNiIsInRoZW1lX2NvbG9yIjoiIzEzMTMxNiJ9">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyA45UGJkppR3vszWZbEWNsciv_Mb6t_hDQ",
+  authDomain:"haushalt-1479a.firebaseapp.com",
+  databaseURL:"https://haushalt-1479a-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"haushalt-1479a",
+  storageBucket:"haushalt-1479a.firebasestorage.app",
+  messagingSenderId:"260012660750",
+  appId:"1:260012660750:web:83c0ece12a0eab2c97c45f"
+});
+const db=firebase.database();
+</script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;overflow-x:hidden}
+::-webkit-scrollbar{display:none}
+@keyframes confettiDrop{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(420px) rotate(720deg) scale(.3);opacity:0}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+input,button,textarea{font-family:'Nunito',sans-serif}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback,useMemo,createContext,useContext}=React;
+
+const LIGHT={bg:"#FAF6F1",surface:"#FFFFFF",surfaceAlt:"#F3EDE6",text:"#2D2A26",textMuted:"#8A8580",border:"#E8E2DA",anna:"#C17950",annaLight:"#F5E6DA",annaBg:"#FDF5EF",max:"#5B8A72",maxLight:"#D4E8DC",maxBg:"#F0F7F3",robot:"#7E8B97",shared:"#9B7DC4",sharedLight:"#EDE5F5",success:"#7CB342",successLight:"#E8F5D4",danger:"#D4644A",warn:"#E6A23C",warnLight:"#FDF0DB",carry:"#7B68AE",carryBg:"#F4F0FA",away:"#90A4AE",awayBg:"#ECEFF1",awayLight:"#CFD8DC",special:"#E67E22",specialLight:"#FDE8D0",specialBg:"#FEF5EC",mode:"light"};
+const DARK={bg:"#131316",surface:"#1E1E22",surfaceAlt:"#27272C",text:"#E4E0DB",textMuted:"#8E8A85",border:"#3A3A40",anna:"#D4895F",annaLight:"#3D2A1E",annaBg:"#2A1F18",max:"#6FA988",maxLight:"#1E3028",maxBg:"#182620",robot:"#8E9AA6",shared:"#A98BD4",sharedLight:"#2A2440",success:"#8EC651",successLight:"#1E2E14",danger:"#E0705A",warn:"#F0AE4A",warnLight:"#332A18",carry:"#8E7CC0",carryBg:"#221E30",away:"#78909C",awayBg:"#1E2428",awayLight:"#2C3438",special:"#F0912E",specialLight:"#33260E",specialBg:"#2A2010",mode:"dark"};
+const ThemeCtx=createContext(DARK);
+
+const DAILY=[
+  {id:"robot-kitchen",label:"Küche saugen",who:"robot",cat:"Saugroboter",icon:"🤖"},
+  {id:"robot-bath",label:"Bad saugen",who:"robot",cat:"Saugroboter",icon:"🤖"},
+  {id:"a-counter",label:"Arbeitsfläche frei",who:"Anna",cat:"Küche",icon:"🧹"},
+  {id:"a-dishes",label:"Geschirr regeln",who:"Anna",cat:"Küche",icon:"🍽️"},
+  {id:"a-sink",label:"Spüle frei",who:"Anna",cat:"Küche",icon:"🚿"},
+  {id:"b-trash-check",label:"Eimer checken",who:"Max",cat:"Müll",icon:"🗑️"},
+  {id:"b-trash-empty",label:"wenn voll → leeren + rausbringen",who:"Max",cat:"Müll",icon:"🗑️"},
+  {id:"b-laundry-collect",label:"sammeln",who:"Max",cat:"Wäsche",icon:"👕"},
+  {id:"b-laundry-wash",label:"waschen",who:"Max",cat:"Wäsche",icon:"🧺"},
+  {id:"b-laundry-hang",label:"aufhängen",who:"Max",cat:"Wäsche",icon:"📎"},
+  {id:"b-laundry-take",label:"abnehmen",who:"Max",cat:"Wäsche",icon:"📦"},
+];
+const WEEKLY={
+  1:[{id:"mon-a-kitchen",label:"Küche gründlich",who:"Anna",cat:"Hauptaufgabe",icon:"🧽",main:true},{id:"mon-b-trash",label:"Müll komplett",who:"Max",cat:"Hauptaufgabe",icon:"🗑️",main:true}],
+  2:[{id:"tue-a-laundry",label:"Wäsche sortieren / kleine Maschine",who:"Anna",cat:"Hauptaufgabe",icon:"👕",main:true}],
+  3:[{id:"wed-a-office",label:"Büro: Ordnung",who:"Anna",cat:"Hauptaufgabe",icon:"🗂️",main:true},{id:"wed-b-chaos",label:"Chaoszone aufräumen",who:"Max",cat:"Hauptaufgabe",icon:"🌀",main:true}],
+  4:[{id:"thu-a-toilet",label:"Toilette",who:"Anna",cat:"Bad",icon:"🚽",main:true},{id:"thu-b-sink",label:"Waschbecken + Spiegel",who:"Max",cat:"Bad",icon:"🪞",main:true}],
+  5:[{id:"fri-b-vacuum",label:"Staubsaugen",who:"Max",cat:"Böden",icon:"🧹",main:true},{id:"fri-a-mop",label:"Wischen",who:"Anna",cat:"Böden",icon:"🧽",main:true}],
+  6:[{id:"we-a-org",label:"Organisation (max. 45 min, 1 Bereich)",who:"Anna",cat:"Wochenende",icon:"📋",main:true},{id:"we-b-laundry",label:"Wäsche finalisieren",who:"Max",cat:"Wochenende",icon:"👕",main:true},{id:"we-b-closet",label:"in Schrank einräumen",who:"Max",cat:"Wochenende",icon:"🗄️",main:true},{id:"we-b-glass",label:"Müll / Altglas prüfen",who:"Max",cat:"Wochenende",icon:"♻️",main:true}],
+  0:[{id:"su-a-org",label:"Organisation (max. 45 min, 1 Bereich)",who:"Anna",cat:"Wochenende",icon:"📋",main:true},{id:"su-b-laundry",label:"Wäsche finalisieren",who:"Max",cat:"Wochenende",icon:"👕",main:true},{id:"su-b-closet",label:"in Schrank einräumen",who:"Max",cat:"Wochenende",icon:"🗄️",main:true},{id:"su-b-glass",label:"Müll / Altglas prüfen",who:"Max",cat:"Wochenende",icon:"♻️",main:true}],
+};
+const ROTATION=[{id:"rot-fridge",label:"Kühlschrank",icon:"🧊"},{id:"rot-oven",label:"Backofen",icon:"🔥"},{id:"rot-windows",label:"Fenster",icon:"🪟"},{id:"rot-storage",label:"Abstellraum",icon:"📦"},{id:"rot-wardrobe",label:"Kleiderschrank",icon:"👔"},{id:"rot-shower",label:"Dusche tief",icon:"🚿"},{id:"rot-paperwork",label:"Papierkram",icon:"📄"}];
+const DAY_NAMES=["So","Mo","Di","Mi","Do","Fr","Sa"];
+const DAY_FULL=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const LVL_LABEL=["Stabil","Angeschlagen","Überfordert","Ausfall"];
+const LVL_COLOR=["#7CB342","#E6A23C","#D4644A","#8B0000"];
+
+const dkey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+function weekDatesFor(off){const now=new Date(),day=now.getDay(),mon=new Date(now);mon.setDate(now.getDate()-((day+6)%7)+off*7);return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});}
+
+function buildTasks(dow,lA,lB,isOffice){
+  let daily=DAILY.map(t=>({...t})),weekly=(WEEKLY[dow]||[]).map(t=>({...t}));
+  const crisis=lA>=2&&lB>=2;
+  if(crisis){daily=daily.filter(t=>["a-counter","a-dishes","a-sink","b-trash-check","b-trash-empty"].includes(t.id));return{daily,weekly:[],crisis};}
+  if(dow===4&&isOffice)weekly=weekly.map(t=>({...t,who:"Anna",note:"Anna übernimmt (Office)"}));
+  [["Anna",lA],["Max",lB]].forEach(([p,lv])=>{
+    if(lv===1)weekly=weekly.map(t=>t.who===p?{...t,optional:true,note:"Optional (Level 1)"}:t);
+    else if(lv===2){daily=daily.map(t=>t.who===p?{...t,optional:true,note:"Mini oder nichts"}:t);weekly=weekly.map(t=>t.who===p?{...t,skipped:true,note:"Übersprungen (Level 2)"}:t);}
+    else if(lv===3){daily=daily.map(t=>t.who===p?{...t,skipped:true,note:"Ausfall"}:t);weekly=weekly.map(t=>t.who===p?{...t,skipped:true,note:"Ausfall"}:t);}
+  });
+  return{daily,weekly,crisis:false};
+}
+
+function getCarryover(selDate,store){
+  const results=[],seen=new Set();
+  for(let i=1;i<=7;i++){
+    const prev=new Date(selDate);prev.setDate(selDate.getDate()-i);
+    const pk=dkey(prev),pd=store[pk];
+    if(!pd||pd.away)continue;
+    const pdow=prev.getDay(),isOff=pdow===2||(pdow===3&&pd.offWed)||(pdow===4&&pd.offThu);
+    const{weekly}=buildTasks(pdow,pd.lA||0,pd.lB||0,isOff);
+    for(const task of weekly){
+      if(task.skipped||seen.has(task.id))continue;
+      let done=false;
+      for(let j=0;j<=i;j++){const cd=new Date(prev);cd.setDate(prev.getDate()+j);const cData=store[dkey(cd)];if(cData?.tasks?.[task.id]?.done){done=true;break;}}
+      if(!done){seen.add(task.id);results.push({...task,note:`⏩ von ${DAY_FULL[pdow]}`,isCarryover:true,cat:"Mitgezogen"});}
+    }
+  }
+  return results;
+}
+
+const EMPTY={tasks:{},lA:0,lB:0,offWed:false,offThu:false,bed:false,notes:[],away:false,customTasks:[],specialTasks:[]};
+
+// ─── FIREBASE HOOKS ───
+function useFirebaseData(){
+  const [store,setStore]=useState({});
+  const [rot,setRot]=useState({});
+  const [ready,setReady]=useState(false);
+  const listenersRef=useRef(new Set());
+
+  // Listen to rotation
+  useEffect(()=>{
+    const ref=db.ref("rotation");
+    ref.on("value",snap=>{setRot(snap.val()||{});});
+    return()=>ref.off();
+  },[]);
+
+  // Subscribe to day data
+  const subscribeDays=useCallback((dateKeys)=>{
+    dateKeys.forEach(k=>{
+      if(listenersRef.current.has(k))return;
+      listenersRef.current.add(k);
+      db.ref(`days/${k}`).on("value",snap=>{
+        const val=snap.val();
+        setStore(prev=>({...prev,[k]:val||{...EMPTY,tasks:{},notes:[],customTasks:[],specialTasks:[]}}));
+      });
+    });
+    setReady(true);
+  },[]);
+
+  const saveDay=useCallback((k,data)=>{
+    // Optimistic local update
+    setStore(prev=>({...prev,[k]:data}));
+    db.ref(`days/${k}`).set(data);
+  },[]);
+
+  const saveRotation=useCallback((data)=>{
+    setRot(data);
+    db.ref("rotation").set(data);
+  },[]);
+
+  useEffect(()=>{
+    return()=>{
+      listenersRef.current.forEach(k=>db.ref(`days/${k}`).off());
+      listenersRef.current.clear();
+    };
+  },[]);
+
+  return{store,rot,ready,subscribeDays,saveDay,saveRotation};
+}
+
+// ─── COMPONENTS ───
+function Confetti({active}){
+  const p=useMemo(()=>Array.from({length:40},(_,i)=>({id:i,left:Math.random()*100,delay:Math.random()*1.5,dur:1.5+Math.random()*2,size:6+Math.random()*8,emoji:["🎉","✨","⭐","💪","🏠","✅","🌟","💫"][Math.floor(Math.random()*8)]})),[]);
+  if(!active)return null;
+  return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{p.map(x=><div key={x.id} style={{position:"absolute",top:-20,left:`${x.left}%`,fontSize:x.size,animation:`confettiDrop ${x.dur}s ease-in ${x.delay}s forwards`}}>{x.emoji}</div>)}</div>;
+}
+
+function PersonSelect({onPick}){
+  const T=useContext(ThemeCtx);
+  return (
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:36,background:T.bg,padding:24}}>
+      <div style={{textAlign:"center"}}><div style={{fontSize:56,marginBottom:12}}>🏠</div><h1 style={{fontSize:28,fontWeight:900,color:T.text,margin:0}}>Haushalt</h1><p style={{color:T.textMuted,fontSize:15,marginTop:8,fontWeight:600}}>Wer bist du?</p></div>
+      <div style={{display:"flex",gap:24}}>
+        {[["Anna","👩",T.anna,T.annaBg],["Max","👨",T.max,T.maxBg]].map(([n,e,col,bg])=>(
+          <button key={n} onClick={()=>onPick(n)} style={{width:140,height:150,borderRadius:24,border:`3px solid ${col}`,background:bg,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.2s",fontFamily:"'Nunito',sans-serif",boxShadow:`0 6px 20px ${col}22`}}>
+            <span style={{fontSize:40}}>{e}</span><span style={{fontSize:20,fontWeight:800,color:col}}>{n}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LevelCtrl({person,level,onChange,color}){
+  const T=useContext(ThemeCtx);
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:level>0?`${LVL_COLOR[level]}18`:"transparent",borderRadius:12,transition:"all 0.3s",flexWrap:"wrap"}}>
+      <span style={{fontSize:14,fontWeight:800,color,minWidth:56}}>{person==="Anna"?"👩":"👨"} {person}</span>
+      <div style={{display:"flex",gap:4}}>{[0,1,2,3].map(l=>(
+        <button key={l} onClick={()=>onChange(l)} style={{width:34,height:34,borderRadius:8,border:"none",background:level===l?LVL_COLOR[l]:T.surfaceAlt,color:level===l?"#fff":T.textMuted,fontSize:13,fontWeight:700,cursor:"pointer",transition:"all 0.15s",boxShadow:level===l?`0 2px 8px ${LVL_COLOR[l]}44`:"none"}}>{l}</button>
+      ))}</div>
+      <span style={{fontSize:11,color:LVL_COLOR[level],fontWeight:700}}>{LVL_LABEL[level]}</span>
+    </div>
+  );
+}
+
+function TaskItem({task,taskData,onToggle,onDelete,me}){
+  const T=useContext(ThemeCtx);
+  const done=taskData?.done,doneBy=taskData?.by;
+  const col=task.who==="Anna"?T.anna:task.who==="Max"?T.max:task.who==="robot"?T.robot:T.shared;
+  const skip=task.skipped,carry=task.isCarryover,special=task.isSpecial;
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:done?`${T.success}12`:carry?T.carryBg:special?T.specialBg:skip?`${T.textMuted}08`:T.surface,borderRadius:14,cursor:skip?"default":"pointer",border:`1.5px solid ${done?T.success+"44":carry?T.carry+"44":special?T.special+"44":skip?T.textMuted+"18":T.border}`,borderLeft:carry?`4px solid ${T.carry}`:special?`4px solid ${T.special}`:undefined,opacity:skip?0.35:1,transition:"all 0.2s"}} onClick={()=>{if(!skip)onToggle();}}>
+      <div style={{width:26,height:26,borderRadius:8,flexShrink:0,border:`2.5px solid ${done?T.success:col+"55"}`,background:done?T.success:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>{done&&<span style={{color:"#fff",fontSize:15,lineHeight:1}}>✓</span>}</div>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontSize:14,fontWeight:600,color:done?T.textMuted:T.text,textDecoration:skip||done?"line-through":"none",lineHeight:1.3}}>{task.icon} {task.label}</div>
+        {task.note&&<div style={{fontSize:11,color:carry?T.carry:task.optional?T.warn:special?T.special:T.textMuted,marginTop:2,fontWeight:600}}>{task.note}</div>}
+      </div>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3,flexShrink:0}}>
+        <div style={{fontSize:10,fontWeight:800,color:col,background:col+"20",padding:"2px 8px",borderRadius:6}}>{task.who==="robot"?"BOT":task.who}</div>
+        {done&&doneBy&&<div style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:4,color:doneBy==="Anna"?T.anna:T.max,background:doneBy==="Anna"?T.annaLight:T.maxLight}}>✓ {doneBy}</div>}
+      </div>
+      {(task.isCustom||task.isSpecial)&&onDelete&&<button onClick={e=>{e.stopPropagation();onDelete();}} style={{width:24,height:24,borderRadius:6,border:"none",background:`${T.danger}20`,color:T.danger,fontSize:14,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
+    </div>
+  );
+}
+
+function AddTaskInline({cats,onAdd}){
+  const T=useContext(ThemeCtx);
+  const [open,setOpen]=useState(false);const [label,setLabel]=useState("");const [who,setWho]=useState("Anna");const [cat,setCat]=useState(cats[0]||"");
+  if(!open)return <button onClick={()=>setOpen(true)} style={{width:"100%",padding:"10px",borderRadius:12,border:`1.5px dashed ${T.border}`,background:"transparent",color:T.textMuted,fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Aufgabe hinzufügen</button>;
+  const submit=()=>{if(!label.trim())return;onAdd({label:label.trim(),who,cat:cat||"Extra",icon:"📌",isCustom:true});setLabel("");setOpen(false);};
+  return (
+    <div style={{background:T.surface,borderRadius:14,border:`1.5px solid ${T.border}`,padding:12,display:"flex",flexDirection:"column",gap:8}}>
+      <input value={label} onChange={e=>setLabel(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit();}} placeholder="Aufgabe..." autoFocus style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,outline:"none",background:T.surfaceAlt,color:T.text}}/>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["Anna","Max","Beide"].map(w=>{const wc=w==="Anna"?T.anna:w==="Max"?T.max:T.shared;return <button key={w} onClick={()=>setWho(w)} style={{padding:"4px 12px",borderRadius:6,border:"none",background:who===w?wc:T.surfaceAlt,color:who===w?"#fff":T.textMuted,fontSize:11,fontWeight:700,cursor:"pointer"}}>{w}</button>;})}</div>
+      {cats.length>1&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{cats.map(c=><button key={c} onClick={()=>setCat(c)} style={{padding:"3px 10px",borderRadius:6,border:`1px solid ${cat===c?T.anna:T.border}`,background:cat===c?T.anna+"20":"transparent",color:cat===c?T.anna:T.textMuted,fontSize:10,fontWeight:600,cursor:"pointer"}}>{c}</button>)}</div>}
+      <div style={{display:"flex",gap:8}}><button onClick={submit} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.anna,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Hinzufügen</button><button onClick={()=>setOpen(false)} style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>✕</button></div>
+    </div>
+  );
+}
+
+function SpecialTasks({tasks,dayTasks,onAdd,onToggle,onDelete,me}){
+  const T=useContext(ThemeCtx);const [open,setOpen]=useState(false);const [label,setLabel]=useState("");const [who,setWho]=useState("Anna");
+  const add=()=>{if(!label.trim())return;onAdd({label:label.trim(),who,icon:"⚡",isSpecial:true});setLabel("");setOpen(false);};
+  return (
+    <div style={{background:T.surface,borderRadius:20,padding:16,border:`1.5px solid ${T.special}44`}}>
+      <div style={{fontSize:11,fontWeight:800,color:T.special,marginBottom:10,letterSpacing:0.5}}>⚡ SONDERTASKS</div>
+      {tasks.length===0&&!open&&<div style={{fontSize:12,color:T.textMuted,textAlign:"center",padding:"4px 0",fontStyle:"italic"}}>Keine Sondertasks heute</div>}
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>{tasks.map((t,i)=><TaskItem key={`special-${i}`} task={t} taskData={dayTasks[`special-${i}`]} onToggle={()=>onToggle(i)} onDelete={()=>onDelete(i)} me={me}/>)}</div>
+      {open?(<div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
+        <input value={label} onChange={e=>setLabel(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}} placeholder="z.B. Koffer packen..." autoFocus style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,outline:"none",background:T.surfaceAlt,color:T.text}}/>
+        <div style={{display:"flex",gap:6}}>{["Anna","Max","Beide"].map(w=>{const wc=w==="Anna"?T.anna:w==="Max"?T.max:T.shared;return <button key={w} onClick={()=>setWho(w)} style={{padding:"4px 12px",borderRadius:6,border:"none",background:who===w?wc:T.surfaceAlt,color:who===w?"#fff":T.textMuted,fontSize:11,fontWeight:700,cursor:"pointer"}}>{w}</button>;})}</div>
+        <div style={{display:"flex",gap:8}}><button onClick={add} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.special,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Hinzufügen</button><button onClick={()=>setOpen(false)} style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>✕</button></div>
+      </div>):(<button onClick={()=>setOpen(true)} style={{width:"100%",padding:"8px",borderRadius:10,border:`1.5px dashed ${T.special}44`,background:"transparent",color:T.special,fontSize:12,fontWeight:700,cursor:"pointer",marginTop:8}}>+ Sondertask</button>)}
+    </div>
+  );
+}
+
+function Timer({crisis}){
+  const T=useContext(ThemeCtx);const total=crisis?300:600;const [secs,setSecs]=useState(total);const [on,setOn]=useState(false);const ref=useRef(null);
+  useEffect(()=>{if(on&&secs>0)ref.current=setInterval(()=>setSecs(s=>s-1),1000);else clearInterval(ref.current);return()=>clearInterval(ref.current);},[on,secs]);
+  useEffect(()=>{if(secs===0)setOn(false);},[secs]);
+  const m=Math.floor(secs/60),s=secs%60,pct=1-secs/total,circ=2*Math.PI*42;
+  return (
+    <div style={{background:T.surface,borderRadius:20,padding:20,border:`1.5px solid ${T.sharedLight}`,textAlign:"center"}}>
+      <div style={{fontSize:13,fontWeight:800,color:T.shared,marginBottom:14,letterSpacing:0.5}}>{crisis?"⚡ 5 MIN RESET":"🌙 CLOSING SHIFT"}</div>
+      <div style={{position:"relative",width:110,height:110,margin:"0 auto 16px"}}>
+        <svg width="110" height="110" style={{transform:"rotate(-90deg)"}}><circle cx="55" cy="55" r="42" fill="none" stroke={T.surfaceAlt} strokeWidth="7"/><circle cx="55" cy="55" r="42" fill="none" stroke={secs===0?T.success:T.shared} strokeWidth="7" strokeDasharray={circ} strokeDashoffset={circ*(1-pct)} strokeLinecap="round" style={{transition:"stroke-dashoffset 0.5s"}}/></svg>
+        <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",fontSize:26,fontWeight:900,color:secs===0?T.success:T.text,letterSpacing:1}}>{String(m).padStart(2,"0")}:{String(s).padStart(2,"0")}</div>
+      </div>
+      <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+        <button onClick={()=>setOn(!on)} style={{padding:"10px 28px",borderRadius:12,border:"none",background:on?T.danger:T.shared,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>{on?"⏸ Pause":secs===total?"▶ Start":"▶ Weiter"}</button>
+        <button onClick={()=>{setOn(false);setSecs(total);}} style={{padding:"10px 16px",borderRadius:12,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:700,fontSize:16,cursor:"pointer"}}>↺</button>
+      </div>
+    </div>
+  );
+}
+
+function Notes({notes,me,onAdd}){
+  const T=useContext(ThemeCtx);const [text,setText]=useState("");
+  const send=()=>{if(!text.trim())return;onAdd({from:me,text:text.trim(),at:new Date().toISOString()});setText("");};
+  return (
+    <div style={{background:T.surface,borderRadius:20,padding:16,border:`1.5px solid ${T.border}`}}>
+      <div style={{fontSize:11,fontWeight:800,color:T.textMuted,marginBottom:10,letterSpacing:0.5}}>💬 NACHRICHTEN</div>
+      {(!notes||notes.length===0)&&<div style={{fontSize:12,color:T.textMuted,textAlign:"center",padding:"8px 0",fontStyle:"italic"}}>Keine Nachrichten heute</div>}
+      {(notes||[]).map((n,i)=>{const isMe=n.from===me,col=n.from==="Anna"?T.anna:T.max;return(
+        <div key={i} style={{display:"flex",flexDirection:isMe?"row-reverse":"row",gap:8,marginBottom:8}}>
+          <div style={{maxWidth:"80%",padding:"8px 12px",borderRadius:12,background:isMe?col+"20":T.surfaceAlt,border:`1px solid ${isMe?col+"33":T.border}`}}>
+            <div style={{fontSize:10,fontWeight:700,color:col,marginBottom:2}}>{n.from} · {new Date(n.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
+            <div style={{fontSize:13,color:T.text,lineHeight:1.4}}>{n.text}</div>
+          </div>
+        </div>);})}
+      <div style={{display:"flex",gap:8,marginTop:8}}>
+        <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")send();}} placeholder="Nachricht hinterlassen..." style={{flex:1,padding:"10px 14px",borderRadius:12,border:`1.5px solid ${T.border}`,background:T.surfaceAlt,fontSize:13,color:T.text,outline:"none"}}/>
+        <button onClick={send} style={{padding:"10px 16px",borderRadius:12,border:"none",background:me==="Anna"?T.anna:T.max,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>↑</button>
+      </div>
+    </div>
+  );
+}
+
+function WeekStats({weekDates,store}){
+  const T=useContext(ThemeCtx);const today=new Date();
+  return (
+    <div style={{background:T.surface,borderRadius:20,padding:16,border:`1.5px solid ${T.border}`}}>
+      <div style={{fontSize:11,fontWeight:800,color:T.textMuted,marginBottom:12,letterSpacing:0.5}}>📊 WOCHENÜBERSICHT</div>
+      <div style={{display:"flex",gap:6,alignItems:"flex-end",height:80}}>
+        {weekDates.map((d,i)=>{
+          const key=dkey(d),dd=store[key],dow=d.getDay();
+          if(dd?.away)return <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}><div style={{width:"100%",borderRadius:6,minHeight:4,height:4,background:T.away}}/><span style={{fontSize:10,fontWeight:600,color:T.away}}>{DAY_NAMES[dow]}</span><span style={{fontSize:9,fontWeight:700,color:T.away}}>✈️</span></div>;
+          const{daily,weekly}=buildTasks(dow,dd?.lA||0,dd?.lB||0,false);
+          const all=[...daily,...weekly].filter(t=>!t.skipped),done=all.filter(t=>dd?.tasks?.[t.id]?.done).length,total=all.length,pct=total>0?done/total:0;
+          const isT=sameDay(d,today),isF=d>today&&!isT;
+          return <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}><div style={{width:"100%",borderRadius:6,minHeight:4,height:`${Math.max(pct*60,4)}px`,background:pct===1?T.success:pct>0?(isT?T.anna:T.warn):isF?T.surfaceAlt:`${T.danger}44`,transition:"height 0.4s"}}/><span style={{fontSize:10,fontWeight:isT?800:600,color:isT?T.text:T.textMuted}}>{DAY_NAMES[dow]}</span><span style={{fontSize:9,fontWeight:700,color:pct===1?T.success:pct>0?T.warn:T.textMuted}}>{isF?"–":`${Math.round(pct*100)}%`}</span></div>;
+        })}
+      </div>
+    </div>
+  );
+}
+
+function RotationPanel({rotation,onDone}){
+  const T=useContext(ThemeCtx);const [open,setOpen]=useState(false);
+  return (
+    <div style={{background:T.surface,borderRadius:20,overflow:"hidden",border:`1.5px solid ${T.border}`}}>
+      <button onClick={()=>setOpen(!open)} style={{width:"100%",padding:"14px 16px",border:"none",background:"transparent",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer",fontFamily:"'Nunito',sans-serif"}}>
+        <span style={{fontSize:13,fontWeight:800,color:T.text}}>🔁 ROTATION (1–2×/Woche)</span>
+        <span style={{fontSize:18,color:T.textMuted,transform:open?"rotate(180deg)":"none",transition:"0.2s"}}>▾</span>
+      </button>
+      {open&&<div style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:6}}>
+        {ROTATION.map(item=>{const last=rotation[item.id],days=last?Math.floor((Date.now()-new Date(last).getTime())/86400000):null,urgent=days!==null&&days>=7;
+          return <div key={item.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:12,background:urgent?`${T.danger}12`:T.surfaceAlt,border:urgent?`1px solid ${T.danger}33`:"none"}}>
+            <span style={{fontSize:18}}>{item.icon}</span><span style={{flex:1,fontSize:13,fontWeight:600,color:T.text}}>{item.label}</span>
+            <span style={{fontSize:11,fontWeight:700,color:urgent?T.danger:T.textMuted}}>{days!==null?`vor ${days}d`:"noch nie"}</span>
+            <button onClick={()=>onDone(item.id)} style={{padding:"5px 12px",borderRadius:8,border:"none",background:`${T.success}22`,color:T.success,fontSize:11,fontWeight:700,cursor:"pointer"}}>✓</button>
+          </div>;})}
+      </div>}
+    </div>
+  );
+}
+
+// ═══ MAIN ═══
+function App(){
+  const [dark,setDark]=useState(()=>{try{return localStorage.getItem("hh_dark")!=="false";}catch{return true;}});
+  const T=dark?DARK:LIGHT;
+  const [me,setMe]=useState(null);
+  const [weekOff,setWeekOff]=useState(0);
+  const [selIdx,setSelIdx]=useState(null);
+  const [showConfetti,setShowConfetti]=useState(false);
+  const prevProg=useRef(0);
+  const today=new Date();
+  const weekDates=useMemo(()=>weekDatesFor(weekOff),[weekOff]);
+  const {store,rot,ready,subscribeDays,saveDay,saveRotation}=useFirebaseData();
+
+  // Subscribe to needed days
+  useEffect(()=>{
+    const keys=[];
+    const first=weekDates[0];
+    for(let i=7;i>=1;i--){const d=new Date(first);d.setDate(first.getDate()-i);keys.push(dkey(d));}
+    weekDates.forEach(d=>keys.push(dkey(d)));
+    subscribeDays(keys);
+  },[weekOff,weekDates,subscribeDays]);
+
+  useEffect(()=>{const idx=weekDates.findIndex(d=>sameDay(d,today));setSelIdx(idx>=0?idx:0);},[weekOff]);
+  useEffect(()=>{try{localStorage.setItem("hh_dark",dark);}catch{}},[dark]);
+  useEffect(()=>{document.body.style.background=T.bg;},[T]);
+
+  const selDate=weekDates[selIdx??0]||today;
+  const dayKey=dkey(selDate);
+  const dd=store[dayKey]||{...EMPTY,tasks:{},notes:[],customTasks:[],specialTasks:[]};
+  const dow=selDate.getDay();
+  const isOffice=dow===2||(dow===3&&dd.offWed)||(dow===4&&dd.offThu);
+  const isAway=dd.away;
+  const{daily,weekly,crisis}=buildTasks(dow,dd.lA,dd.lB,isOffice);
+  const carryover=isAway?[]:getCarryover(selDate,store);
+  const customTasks=(dd.customTasks||[]).map((t,i)=>({...t,id:`custom-${i}`,isCustom:true}));
+  const specialTasks=dd.specialTasks||[];
+  const allRegular=[...daily,...weekly,...carryover,...customTasks].filter(t=>!t.skipped);
+  const allWithSpecial=[...allRegular,...specialTasks.map((_,i)=>({id:`special-${i}`}))];
+  const doneCount=isAway?0:allWithSpecial.filter(t=>dd.tasks[t.id]?.done).length;
+  const totalCount=isAway?0:allWithSpecial.length;
+  const progress=totalCount>0?doneCount/totalCount:0;
+
+  useEffect(()=>{if(progress===1&&prevProg.current<1&&totalCount>0){setShowConfetti(true);setTimeout(()=>setShowConfetti(false),4000);}prevProg.current=progress;},[progress,totalCount]);
+
+  const save=useCallback(updates=>{const nd={...dd,...updates};saveDay(dayKey,nd);},[dayKey,dd,saveDay]);
+  const toggle=useCallback(id=>{const cur=dd.tasks[id],nt={...dd.tasks};if(cur?.done)delete nt[id];else nt[id]={done:true,by:me,at:new Date().toISOString()};save({tasks:nt});},[dd,me,save]);
+  const addNote=useCallback(note=>{save({notes:[...(dd.notes||[]),note]});},[dd,save]);
+  const rotDone=useCallback(id=>{const nr={...rot,[id]:new Date().toISOString()};saveRotation(nr);},[rot,saveRotation]);
+  const addCustom=useCallback(task=>{save({customTasks:[...(dd.customTasks||[]),task]});},[dd,save]);
+  const delCustom=useCallback(idx=>{const ct=[...(dd.customTasks||[])];ct.splice(idx,1);const nt={...dd.tasks};delete nt[`custom-${idx}`];save({customTasks:ct,tasks:nt});},[dd,save]);
+  const addSpecial=useCallback(task=>{save({specialTasks:[...(dd.specialTasks||[]),task]});},[dd,save]);
+  const togSpecial=useCallback(idx=>{toggle(`special-${idx}`);},[toggle]);
+  const delSpecial=useCallback(idx=>{const st=[...(dd.specialTasks||[])];st.splice(idx,1);const nt={...dd.tasks};delete nt[`special-${idx}`];save({specialTasks:st,tasks:nt});},[dd,save]);
+
+  const myCol=me==="Anna"?T.anna:T.max,myBg=me==="Anna"?T.annaBg:T.maxBg;
+
+  if(!me)return <ThemeCtx.Provider value={T}><PersonSelect onPick={setMe}/></ThemeCtx.Provider>;
+  if(!ready)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:T.bg,fontFamily:"'Nunito',sans-serif"}}><div style={{fontSize:40,animation:"pulse 1.5s infinite"}}>🏠</div></div>;
+
+  const groups=[];
+  const addGroup=(tasks,sec)=>{const cats={};tasks.forEach(t=>{if(!cats[t.cat])cats[t.cat]=[];cats[t.cat].push(t);});Object.entries(cats).forEach(([cat,ts])=>groups.push({cat,sec,tasks:ts}));};
+  if(!isAway){addGroup(daily,"daily");if(weekly.length)addGroup(weekly,"weekly");if(carryover.length)addGroup(carryover,"carry");if(customTasks.length)addGroup(customTasks,"custom");}
+  const allCats=[...new Set(DAILY.map(t=>t.cat))];
+
+  return (
+    <ThemeCtx.Provider value={T}>
+    <div style={{minHeight:"100vh",background:T.bg,fontFamily:"'Nunito',sans-serif",color:T.text,maxWidth:480,margin:"0 auto",paddingBottom:48}}>
+      <Confetti active={showConfetti}/>
+      <div style={{padding:"14px 20px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,background:T.bg,zIndex:10,borderBottom:`1px solid ${T.border}`}}>
+        <h1 style={{fontSize:20,fontWeight:900,margin:0}}>🏠 Haushalt</h1>
+        <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={()=>setDark(!dark)} style={{width:36,height:36,borderRadius:10,border:`1.5px solid ${T.border}`,background:T.surfaceAlt,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{dark?"☀️":"🌙"}</button>
+          <button onClick={()=>setMe(null)} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:10,border:`2px solid ${myCol}`,background:myBg,color:myCol,fontWeight:700,fontSize:13,cursor:"pointer"}}>{me==="Anna"?"👩":"👨"} {me}</button>
+        </div>
+      </div>
+
+      <div style={{position:"sticky",top:55,background:T.bg,zIndex:9,borderBottom:`1px solid ${T.border}`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 16px 0"}}>
+          <button onClick={()=>setWeekOff(w=>w-1)} style={{width:32,height:32,borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:16,color:T.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+          <span style={{fontSize:13,fontWeight:700,color:T.textMuted}}>{weekDates[0].toLocaleDateString("de-DE",{day:"numeric",month:"short"})} – {weekDates[6].toLocaleDateString("de-DE",{day:"numeric",month:"short",year:"numeric"})}</span>
+          <div style={{display:"flex",gap:4}}>
+            {weekOff!==0&&<button onClick={()=>setWeekOff(0)} style={{padding:"4px 10px",borderRadius:8,border:"none",background:myCol+"20",color:myCol,fontSize:11,fontWeight:700,cursor:"pointer"}}>Heute</button>}
+            <button onClick={()=>setWeekOff(w=>w+1)} style={{width:32,height:32,borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:16,color:T.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:4,padding:"8px 16px 10px",overflowX:"auto"}}>
+          {weekDates.map((d,i)=>{
+            const sel=i===selIdx,isT=sameDay(d,today),key=dkey(d),dd2=store[key],dayAway=dd2?.away;
+            const hasDone=dd2&&dd2.tasks&&Object.values(dd2.tasks).some(t=>t.done);
+            const dayCarry=getCarryover(d,store),hasCarry=dayCarry.length>0;
+            return (
+              <button key={i} onClick={()=>setSelIdx(i)} style={{flex:1,minWidth:42,padding:"6px 2px 8px",borderRadius:12,border:sel?`2px solid ${myCol}`:isT?`2px solid ${myCol}44`:"2px solid transparent",background:sel?myCol+"15":dayAway?T.awayBg:"transparent",cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",gap:1,transition:"all 0.15s"}}>
+                <span style={{fontSize:10,fontWeight:700,color:sel?myCol:dayAway?T.away:T.textMuted}}>{dayAway?"✈️":DAY_NAMES[d.getDay()]}</span>
+                <span style={{fontSize:17,fontWeight:900,color:sel?myCol:isT?T.text:dayAway?T.away:T.textMuted}}>{d.getDate()}</span>
+                <div style={{display:"flex",gap:2,marginTop:1}}>
+                  {hasDone&&!dayAway&&<div style={{width:5,height:5,borderRadius:"50%",background:sel?myCol:T.success}}/>}
+                  {hasCarry&&!dayAway&&<div style={{width:5,height:5,borderRadius:"50%",background:T.carry}}/>}
+                </div>
+              </button>);
+          })}
+        </div>
+      </div>
+
+      <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:16,marginTop:16}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div><h2 style={{fontSize:20,fontWeight:900,margin:0}}>{DAY_FULL[dow]}</h2>
+            <span style={{fontSize:12,color:T.textMuted,fontWeight:600}}>{selDate.toLocaleDateString("de-DE",{day:"numeric",month:"long"})}{isOffice&&!isAway&&<span style={{color:T.warn,fontWeight:700,marginLeft:8}}>📍 Office</span>}</span></div>
+          {isAway?<div style={{fontSize:13,fontWeight:800,color:T.away,background:T.awayBg,padding:"6px 14px",borderRadius:10}}>✈️ Abwesend</div>
+          :progress===1&&totalCount>0?<div style={{fontSize:13,fontWeight:800,color:T.success,background:T.successLight,padding:"6px 14px",borderRadius:10,animation:"pulse 1.5s infinite"}}>🎉 Erledigt!</div>
+          :<div style={{fontSize:14,fontWeight:800,color:myCol,background:myCol+"15",padding:"5px 14px",borderRadius:10}}>{doneCount}/{totalCount}</div>}
+        </div>
+
+        {!isAway&&<div style={{height:7,background:T.surfaceAlt,borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,background:progress===1?T.success:`linear-gradient(90deg,${myCol},${myCol}cc)`,width:`${progress*100}%`,transition:"width 0.5s ease"}}/></div>}
+
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:isAway?T.awayBg:T.surfaceAlt,borderRadius:14,padding:"12px 16px",border:isAway?`2px solid ${T.away}44`:`1.5px solid ${T.border}`}}>
+          <span style={{fontSize:13,fontWeight:700,color:isAway?T.away:T.textMuted}}>✈️ Abwesend</span>
+          <button onClick={()=>save({away:!dd.away})} style={{padding:"6px 18px",borderRadius:8,border:"none",background:isAway?T.away:T.surfaceAlt,color:isAway?"#fff":T.textMuted,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAway?"Ja":"Nein"}</button>
+        </div>
+
+        {isAway&&<div style={{background:T.awayBg,border:`2px solid ${T.awayLight}`,borderRadius:16,padding:20,textAlign:"center"}}><div style={{fontSize:32}}>✈️</div><div style={{fontSize:15,fontWeight:800,color:T.away,marginTop:6}}>Nicht zuhause</div><div style={{fontSize:12,color:T.textMuted,marginTop:6,lineHeight:1.5}}>Alle Aufgaben pausiert. Hauptaufgaben werden mitgezogen.</div></div>}
+
+        {!isAway&&<>
+          <div style={{background:T.surface,borderRadius:16,padding:12,border:`1.5px solid ${T.border}`}}>
+            <div style={{fontSize:11,fontWeight:800,color:T.textMuted,marginBottom:6,letterSpacing:0.5}}>⚡ ENERGY LEVEL</div>
+            <LevelCtrl person="Anna" level={dd.lA||0} color={T.anna} onChange={l=>save({lA:l})}/>
+            <LevelCtrl person="Max" level={dd.lB||0} color={T.max} onChange={l=>save({lB:l})}/>
+          </div>
+
+          {crisis&&<div style={{background:`${T.danger}15`,border:`2px solid ${T.danger}44`,borderRadius:16,padding:18,textAlign:"center"}}><div style={{fontSize:28}}>🚨</div><div style={{fontSize:15,fontWeight:900,color:T.danger,marginTop:4}}>KRISENMODUS</div><div style={{fontSize:12,color:T.textMuted,marginTop:6,lineHeight:1.5}}>Nur Küche minimal + Müll sichern + 5 min Reset</div></div>}
+
+          {(dow===3||dow===4)&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.warnLight,borderRadius:14,padding:"12px 16px"}}><span style={{fontSize:13,fontWeight:700,color:T.warn}}>📍 {DAY_FULL[dow]} = Office?</span><button onClick={()=>{if(dow===3)save({offWed:!dd.offWed});else save({offThu:!dd.offThu});}} style={{padding:"6px 18px",borderRadius:8,border:"none",background:isOffice?T.warn:T.surfaceAlt,color:isOffice?"#fff":T.textMuted,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isOffice?"Ja":"Nein"}</button></div>}
+
+          {(dow===6||dow===0)&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.sharedLight,borderRadius:14,padding:"12px 16px"}}><span style={{fontSize:13,fontWeight:700,color:T.shared}}>🛏️ Bettwäsche-Woche?</span><button onClick={()=>save({bed:!dd.bed})} style={{padding:"6px 18px",borderRadius:8,border:"none",background:dd.bed?T.shared:T.surfaceAlt,color:dd.bed?"#fff":T.textMuted,fontWeight:700,fontSize:13,cursor:"pointer"}}>{dd.bed?"Ja":"Nein"}</button></div>}
+
+          {dd.bed&&(dow===6||dow===0)&&<div style={{display:"flex",flexDirection:"column",gap:6}}><div style={{fontSize:11,fontWeight:800,color:T.shared,padding:"0 4px",letterSpacing:0.5}}>🛏️ BETTWÄSCHE</div><TaskItem task={{id:"bed-a",label:"Abziehen",who:"Anna",icon:"🛏️"}} taskData={(dd.tasks||{})["bed-a"]} onToggle={()=>toggle("bed-a")} me={me}/><TaskItem task={{id:"bed-b",label:"Neu beziehen",who:"Max",icon:"🛏️"}} taskData={(dd.tasks||{})["bed-b"]} onToggle={()=>toggle("bed-b")} me={me}/></div>}
+
+          {groups.map((g,gi)=>(
+            <div key={gi} style={{display:"flex",flexDirection:"column",gap:6}}>
+              <div style={{fontSize:11,fontWeight:800,padding:"0 4px",letterSpacing:0.5,color:g.sec==="daily"?T.textMuted:g.sec==="carry"?T.carry:g.sec==="custom"?T.anna:myCol,display:"flex",alignItems:"center",gap:6}}>
+                {g.sec==="daily"?"🔵":g.sec==="carry"?"⏩":g.sec==="custom"?"📌":"🟠"} {g.cat.toUpperCase()}
+                {g.sec==="weekly"&&<span style={{fontSize:10,fontWeight:600,color:T.textMuted}}>(Hauptaufgabe)</span>}
+                {g.sec==="carry"&&<span style={{fontSize:10,fontWeight:600,color:T.carry}}>(offen)</span>}
+              </div>
+              {g.tasks.map((t)=><TaskItem key={t.id} task={t} taskData={(dd.tasks||{})[t.id]} onToggle={()=>toggle(t.id)} onDelete={t.isCustom?()=>delCustom(parseInt(t.id.split("-")[1])):undefined} me={me}/>)}
+            </div>
+          ))}
+
+          <AddTaskInline cats={allCats} onAdd={addCustom}/>
+          <SpecialTasks tasks={specialTasks} dayTasks={dd.tasks||{}} onAdd={addSpecial} onToggle={togSpecial} onDelete={delSpecial} me={me}/>
+          <Timer crisis={crisis}/>
+        </>}
+
+        <Notes notes={dd.notes} me={me} onAdd={addNote}/>
+        <WeekStats weekDates={weekDates} store={store}/>
+        {!isAway&&<RotationPanel rotation={rot} onDone={rotDone}/>}
+        <div style={{textAlign:"center",padding:"24px 0 8px",fontSize:11,color:T.textMuted,lineHeight:1.8}}>Daily &gt; alles andere · Kein Aufholen · Kein Perfektionismus</div>
+      </div>
+    </div>
+    </ThemeCtx.Provider>
+  );
+}
+
+ReactDOM.render(React.createElement(App),document.getElementById("root"));
+</script>
+</body>
+</html>
