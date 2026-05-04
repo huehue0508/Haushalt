@@ -5,13 +5,27 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1A1A1E">
+<meta name="theme-color" content="#131316">
 <title>🏠 Haushalt</title>
-<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSGF1c2hhbHQiLCJzaG9ydF9uYW1lIjoiSGF1c2hhbHQiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzFBMUExRSIsInRoZW1lX2NvbG9yIjoiIzFBMUExRSJ9">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSGF1c2hhbHQiLCJzaG9ydF9uYW1lIjoiSGF1c2hhbHQiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzEzMTMxNiIsInRoZW1lX2NvbG9yIjoiIzEzMTMxNiJ9">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyA45UGJkppR3vszWZbEWNsciv_Mb6t_hDQ",
+  authDomain:"haushalt-1479a.firebaseapp.com",
+  databaseURL:"https://haushalt-1479a-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"haushalt-1479a",
+  storageBucket:"haushalt-1479a.firebasestorage.app",
+  messagingSenderId:"260012660750",
+  appId:"1:260012660750:web:83c0ece12a0eab2c97c45f"
+});
+const db=firebase.database();
+</script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
 body{font-family:'Nunito',sans-serif;overflow-x:hidden}
@@ -26,37 +40,10 @@ input,button,textarea{font-family:'Nunito',sans-serif}
 <script type="text/babel">
 const{useState,useEffect,useRef,useCallback,useMemo,createContext,useContext}=React;
 
-// ─── THEMES ───
-const LIGHT={
-  bg:"#FAF6F1",surface:"#FFFFFF",surfaceAlt:"#F3EDE6",
-  text:"#2D2A26",textMuted:"#8A8580",border:"#E8E2DA",
-  anna:"#C17950",annaLight:"#F5E6DA",annaBg:"#FDF5EF",
-  max:"#5B8A72",maxLight:"#D4E8DC",maxBg:"#F0F7F3",
-  robot:"#7E8B97",shared:"#9B7DC4",sharedLight:"#EDE5F5",
-  success:"#7CB342",successLight:"#E8F5D4",
-  danger:"#D4644A",warn:"#E6A23C",warnLight:"#FDF0DB",
-  carry:"#7B68AE",carryBg:"#F4F0FA",
-  away:"#90A4AE",awayBg:"#ECEFF1",awayLight:"#CFD8DC",
-  special:"#E67E22",specialLight:"#FDE8D0",specialBg:"#FEF5EC",
-  mode:"light"
-};
-const DARK={
-  bg:"#131316",surface:"#1E1E22",surfaceAlt:"#27272C",
-  text:"#E4E0DB",textMuted:"#8E8A85",border:"#3A3A40",
-  anna:"#D4895F",annaLight:"#3D2A1E",annaBg:"#2A1F18",
-  max:"#6FA988",maxLight:"#1E3028",maxBg:"#182620",
-  robot:"#8E9AA6",shared:"#A98BD4",sharedLight:"#2A2440",
-  success:"#8EC651",successLight:"#1E2E14",
-  danger:"#E0705A",warn:"#F0AE4A",warnLight:"#332A18",
-  carry:"#8E7CC0",carryBg:"#221E30",
-  away:"#78909C",awayBg:"#1E2428",awayLight:"#2C3438",
-  special:"#F0912E",specialLight:"#33260E",specialBg:"#2A2010",
-  mode:"dark"
-};
-
+const LIGHT={bg:"#FAF6F1",surface:"#FFFFFF",surfaceAlt:"#F3EDE6",text:"#2D2A26",textMuted:"#8A8580",border:"#E8E2DA",anna:"#C17950",annaLight:"#F5E6DA",annaBg:"#FDF5EF",max:"#5B8A72",maxLight:"#D4E8DC",maxBg:"#F0F7F3",robot:"#7E8B97",shared:"#9B7DC4",sharedLight:"#EDE5F5",success:"#7CB342",successLight:"#E8F5D4",danger:"#D4644A",warn:"#E6A23C",warnLight:"#FDF0DB",carry:"#7B68AE",carryBg:"#F4F0FA",away:"#90A4AE",awayBg:"#ECEFF1",awayLight:"#CFD8DC",special:"#E67E22",specialLight:"#FDE8D0",specialBg:"#FEF5EC",mode:"light"};
+const DARK={bg:"#131316",surface:"#1E1E22",surfaceAlt:"#27272C",text:"#E4E0DB",textMuted:"#8E8A85",border:"#3A3A40",anna:"#D4895F",annaLight:"#3D2A1E",annaBg:"#2A1F18",max:"#6FA988",maxLight:"#1E3028",maxBg:"#182620",robot:"#8E9AA6",shared:"#A98BD4",sharedLight:"#2A2440",success:"#8EC651",successLight:"#1E2E14",danger:"#E0705A",warn:"#F0AE4A",warnLight:"#332A18",carry:"#8E7CC0",carryBg:"#221E30",away:"#78909C",awayBg:"#1E2428",awayLight:"#2C3438",special:"#F0912E",specialLight:"#33260E",specialBg:"#2A2010",mode:"dark"};
 const ThemeCtx=createContext(DARK);
 
-// ─── DATA ───
 const DAILY=[
   {id:"robot-kitchen",label:"Küche saugen",who:"robot",cat:"Saugroboter",icon:"🤖"},
   {id:"robot-bath",label:"Bad saugen",who:"robot",cat:"Saugroboter",icon:"🤖"},
@@ -79,18 +66,12 @@ const WEEKLY={
   6:[{id:"we-a-org",label:"Organisation (max. 45 min, 1 Bereich)",who:"Anna",cat:"Wochenende",icon:"📋",main:true},{id:"we-b-laundry",label:"Wäsche finalisieren",who:"Max",cat:"Wochenende",icon:"👕",main:true},{id:"we-b-closet",label:"in Schrank einräumen",who:"Max",cat:"Wochenende",icon:"🗄️",main:true},{id:"we-b-glass",label:"Müll / Altglas prüfen",who:"Max",cat:"Wochenende",icon:"♻️",main:true}],
   0:[{id:"su-a-org",label:"Organisation (max. 45 min, 1 Bereich)",who:"Anna",cat:"Wochenende",icon:"📋",main:true},{id:"su-b-laundry",label:"Wäsche finalisieren",who:"Max",cat:"Wochenende",icon:"👕",main:true},{id:"su-b-closet",label:"in Schrank einräumen",who:"Max",cat:"Wochenende",icon:"🗄️",main:true},{id:"su-b-glass",label:"Müll / Altglas prüfen",who:"Max",cat:"Wochenende",icon:"♻️",main:true}],
 };
-const ROTATION=[
-  {id:"rot-fridge",label:"Kühlschrank",icon:"🧊"},{id:"rot-oven",label:"Backofen",icon:"🔥"},
-  {id:"rot-windows",label:"Fenster",icon:"🪟"},{id:"rot-storage",label:"Abstellraum",icon:"📦"},
-  {id:"rot-wardrobe",label:"Kleiderschrank",icon:"👔"},{id:"rot-shower",label:"Dusche tief",icon:"🚿"},
-  {id:"rot-paperwork",label:"Papierkram",icon:"📄"},
-];
+const ROTATION=[{id:"rot-fridge",label:"Kühlschrank",icon:"🧊"},{id:"rot-oven",label:"Backofen",icon:"🔥"},{id:"rot-windows",label:"Fenster",icon:"🪟"},{id:"rot-storage",label:"Abstellraum",icon:"📦"},{id:"rot-wardrobe",label:"Kleiderschrank",icon:"👔"},{id:"rot-shower",label:"Dusche tief",icon:"🚿"},{id:"rot-paperwork",label:"Papierkram",icon:"📄"}];
 const DAY_NAMES=["So","Mo","Di","Mi","Do","Fr","Sa"];
 const DAY_FULL=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 const LVL_LABEL=["Stabil","Angeschlagen","Überfordert","Ausfall"];
 const LVL_COLOR=["#7CB342","#E6A23C","#D4644A","#8B0000"];
 
-// ─── HELPERS ───
 const dkey=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
 function weekDatesFor(off){const now=new Date(),day=now.getDay(),mon=new Date(now);mon.setDate(now.getDate()-((day+6)%7)+off*7);return Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});}
@@ -126,32 +107,68 @@ function getCarryover(selDate,store){
   return results;
 }
 
-// ─── STORAGE (localStorage, Firebase-ready) ───
-const DB_KEY="haushalt_data";
-function loadAll(){try{return JSON.parse(localStorage.getItem(DB_KEY))||{};}catch{return {};}}
-function saveAll(data){try{localStorage.setItem(DB_KEY,JSON.stringify(data));}catch(e){console.error(e);}}
-function loadRot(){try{return JSON.parse(localStorage.getItem("haushalt_rot"))||{};}catch{return {};}}
-function saveRot(data){try{localStorage.setItem("haushalt_rot",JSON.stringify(data));}catch(e){console.error(e);}}
-
 const EMPTY={tasks:{},lA:0,lB:0,offWed:false,offThu:false,bed:false,notes:[],away:false,customTasks:[],specialTasks:[]};
 
-// ─── COMPONENTS ───
+// ─── FIREBASE HOOKS ───
+function useFirebaseData(){
+  const [store,setStore]=useState({});
+  const [rot,setRot]=useState({});
+  const [ready,setReady]=useState(false);
+  const listenersRef=useRef(new Set());
 
+  // Listen to rotation
+  useEffect(()=>{
+    const ref=db.ref("rotation");
+    ref.on("value",snap=>{setRot(snap.val()||{});});
+    return()=>ref.off();
+  },[]);
+
+  // Subscribe to day data
+  const subscribeDays=useCallback((dateKeys)=>{
+    dateKeys.forEach(k=>{
+      if(listenersRef.current.has(k))return;
+      listenersRef.current.add(k);
+      db.ref(`days/${k}`).on("value",snap=>{
+        const val=snap.val();
+        setStore(prev=>({...prev,[k]:val||{...EMPTY,tasks:{},notes:[],customTasks:[],specialTasks:[]}}));
+      });
+    });
+    setReady(true);
+  },[]);
+
+  const saveDay=useCallback((k,data)=>{
+    // Optimistic local update
+    setStore(prev=>({...prev,[k]:data}));
+    db.ref(`days/${k}`).set(data);
+  },[]);
+
+  const saveRotation=useCallback((data)=>{
+    setRot(data);
+    db.ref("rotation").set(data);
+  },[]);
+
+  useEffect(()=>{
+    return()=>{
+      listenersRef.current.forEach(k=>db.ref(`days/${k}`).off());
+      listenersRef.current.clear();
+    };
+  },[]);
+
+  return{store,rot,ready,subscribeDays,saveDay,saveRotation};
+}
+
+// ─── COMPONENTS ───
 function Confetti({active}){
   const p=useMemo(()=>Array.from({length:40},(_,i)=>({id:i,left:Math.random()*100,delay:Math.random()*1.5,dur:1.5+Math.random()*2,size:6+Math.random()*8,emoji:["🎉","✨","⭐","💪","🏠","✅","🌟","💫"][Math.floor(Math.random()*8)]})),[]);
   if(!active)return null;
-  return React.createElement("div",{style:{position:"fixed",top:0,left:0,right:0,bottom:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}},p.map(x=>React.createElement("div",{key:x.id,style:{position:"absolute",top:-20,left:`${x.left}%`,fontSize:x.size,animation:`confettiDrop ${x.dur}s ease-in ${x.delay}s forwards`}},x.emoji)));
+  return <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{p.map(x=><div key={x.id} style={{position:"absolute",top:-20,left:`${x.left}%`,fontSize:x.size,animation:`confettiDrop ${x.dur}s ease-in ${x.delay}s forwards`}}>{x.emoji}</div>)}</div>;
 }
 
 function PersonSelect({onPick}){
   const T=useContext(ThemeCtx);
   return (
     <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:36,background:T.bg,padding:24}}>
-      <div style={{textAlign:"center"}}>
-        <div style={{fontSize:56,marginBottom:12}}>🏠</div>
-        <h1 style={{fontSize:28,fontWeight:900,color:T.text,margin:0}}>Haushalt</h1>
-        <p style={{color:T.textMuted,fontSize:15,marginTop:8,fontWeight:600}}>Wer bist du?</p>
-      </div>
+      <div style={{textAlign:"center"}}><div style={{fontSize:56,marginBottom:12}}>🏠</div><h1 style={{fontSize:28,fontWeight:900,color:T.text,margin:0}}>Haushalt</h1><p style={{color:T.textMuted,fontSize:15,marginTop:8,fontWeight:600}}>Wer bist du?</p></div>
       <div style={{display:"flex",gap:24}}>
         {[["Anna","👩",T.anna,T.annaBg],["Max","👨",T.max,T.maxBg]].map(([n,e,col,bg])=>(
           <button key={n} onClick={()=>onPick(n)} style={{width:140,height:150,borderRadius:24,border:`3px solid ${col}`,background:bg,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.2s",fontFamily:"'Nunito',sans-serif",boxShadow:`0 6px 20px ${col}22`}}>
@@ -168,11 +185,9 @@ function LevelCtrl({person,level,onChange,color}){
   return (
     <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:level>0?`${LVL_COLOR[level]}18`:"transparent",borderRadius:12,transition:"all 0.3s",flexWrap:"wrap"}}>
       <span style={{fontSize:14,fontWeight:800,color,minWidth:56}}>{person==="Anna"?"👩":"👨"} {person}</span>
-      <div style={{display:"flex",gap:4}}>
-        {[0,1,2,3].map(l=>(
-          <button key={l} onClick={()=>onChange(l)} style={{width:34,height:34,borderRadius:8,border:"none",background:level===l?LVL_COLOR[l]:T.surfaceAlt,color:level===l?"#fff":T.textMuted,fontSize:13,fontWeight:700,cursor:"pointer",transition:"all 0.15s",boxShadow:level===l?`0 2px 8px ${LVL_COLOR[l]}44`:"none"}}>{l}</button>
-        ))}
-      </div>
+      <div style={{display:"flex",gap:4}}>{[0,1,2,3].map(l=>(
+        <button key={l} onClick={()=>onChange(l)} style={{width:34,height:34,borderRadius:8,border:"none",background:level===l?LVL_COLOR[l]:T.surfaceAlt,color:level===l?"#fff":T.textMuted,fontSize:13,fontWeight:700,cursor:"pointer",transition:"all 0.15s",boxShadow:level===l?`0 2px 8px ${LVL_COLOR[l]}44`:"none"}}>{l}</button>
+      ))}</div>
       <span style={{fontSize:11,color:LVL_COLOR[level],fontWeight:700}}>{LVL_LABEL[level]}</span>
     </div>
   );
@@ -185,9 +200,7 @@ function TaskItem({task,taskData,onToggle,onDelete,me}){
   const skip=task.skipped,carry=task.isCarryover,special=task.isSpecial;
   return (
     <div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:done?`${T.success}12`:carry?T.carryBg:special?T.specialBg:skip?`${T.textMuted}08`:T.surface,borderRadius:14,cursor:skip?"default":"pointer",border:`1.5px solid ${done?T.success+"44":carry?T.carry+"44":special?T.special+"44":skip?T.textMuted+"18":T.border}`,borderLeft:carry?`4px solid ${T.carry}`:special?`4px solid ${T.special}`:undefined,opacity:skip?0.35:1,transition:"all 0.2s"}} onClick={()=>{if(!skip)onToggle();}}>
-      <div style={{width:26,height:26,borderRadius:8,flexShrink:0,border:`2.5px solid ${done?T.success:col+"55"}`,background:done?T.success:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
-        {done&&<span style={{color:"#fff",fontSize:15,lineHeight:1}}>✓</span>}
-      </div>
+      <div style={{width:26,height:26,borderRadius:8,flexShrink:0,border:`2.5px solid ${done?T.success:col+"55"}`,background:done?T.success:"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>{done&&<span style={{color:"#fff",fontSize:15,lineHeight:1}}>✓</span>}</div>
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontSize:14,fontWeight:600,color:done?T.textMuted:T.text,textDecoration:skip||done?"line-through":"none",lineHeight:1.3}}>{task.icon} {task.label}</div>
         {task.note&&<div style={{fontSize:11,color:carry?T.carry:task.optional?T.warn:special?T.special:T.textMuted,marginTop:2,fontWeight:600}}>{task.note}</div>}
@@ -196,79 +209,45 @@ function TaskItem({task,taskData,onToggle,onDelete,me}){
         <div style={{fontSize:10,fontWeight:800,color:col,background:col+"20",padding:"2px 8px",borderRadius:6}}>{task.who==="robot"?"BOT":task.who}</div>
         {done&&doneBy&&<div style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:4,color:doneBy==="Anna"?T.anna:T.max,background:doneBy==="Anna"?T.annaLight:T.maxLight}}>✓ {doneBy}</div>}
       </div>
-      {(task.isCustom||task.isSpecial)&&onDelete&&(
-        <button onClick={e=>{e.stopPropagation();onDelete();}} style={{width:24,height:24,borderRadius:6,border:"none",background:`${T.danger}20`,color:T.danger,fontSize:14,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
-      )}
+      {(task.isCustom||task.isSpecial)&&onDelete&&<button onClick={e=>{e.stopPropagation();onDelete();}} style={{width:24,height:24,borderRadius:6,border:"none",background:`${T.danger}20`,color:T.danger,fontSize:14,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
     </div>
   );
 }
 
 function AddTaskInline({cats,onAdd}){
   const T=useContext(ThemeCtx);
-  const [open,setOpen]=useState(false);
-  const [label,setLabel]=useState("");
-  const [who,setWho]=useState("Anna");
-  const [cat,setCat]=useState(cats[0]||"");
+  const [open,setOpen]=useState(false);const [label,setLabel]=useState("");const [who,setWho]=useState("Anna");const [cat,setCat]=useState(cats[0]||"");
   if(!open)return <button onClick={()=>setOpen(true)} style={{width:"100%",padding:"10px",borderRadius:12,border:`1.5px dashed ${T.border}`,background:"transparent",color:T.textMuted,fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Aufgabe hinzufügen</button>;
   const submit=()=>{if(!label.trim())return;onAdd({label:label.trim(),who,cat:cat||"Extra",icon:"📌",isCustom:true});setLabel("");setOpen(false);};
   return (
     <div style={{background:T.surface,borderRadius:14,border:`1.5px solid ${T.border}`,padding:12,display:"flex",flexDirection:"column",gap:8}}>
       <input value={label} onChange={e=>setLabel(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")submit();}} placeholder="Aufgabe..." autoFocus style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,outline:"none",background:T.surfaceAlt,color:T.text}}/>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-        {["Anna","Max","Beide"].map(w=>{const wc=w==="Anna"?T.anna:w==="Max"?T.max:T.shared;return(
-          <button key={w} onClick={()=>setWho(w)} style={{padding:"4px 12px",borderRadius:6,border:"none",background:who===w?wc:T.surfaceAlt,color:who===w?"#fff":T.textMuted,fontSize:11,fontWeight:700,cursor:"pointer"}}>{w}</button>
-        );})}
-      </div>
-      {cats.length>1&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{cats.map(c=>(
-        <button key={c} onClick={()=>setCat(c)} style={{padding:"3px 10px",borderRadius:6,border:`1px solid ${cat===c?T.anna:T.border}`,background:cat===c?T.anna+"20":"transparent",color:cat===c?T.anna:T.textMuted,fontSize:10,fontWeight:600,cursor:"pointer"}}>{c}</button>
-      ))}</div>}
-      <div style={{display:"flex",gap:8}}>
-        <button onClick={submit} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.anna,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Hinzufügen</button>
-        <button onClick={()=>setOpen(false)} style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>✕</button>
-      </div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["Anna","Max","Beide"].map(w=>{const wc=w==="Anna"?T.anna:w==="Max"?T.max:T.shared;return <button key={w} onClick={()=>setWho(w)} style={{padding:"4px 12px",borderRadius:6,border:"none",background:who===w?wc:T.surfaceAlt,color:who===w?"#fff":T.textMuted,fontSize:11,fontWeight:700,cursor:"pointer"}}>{w}</button>;})}</div>
+      {cats.length>1&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{cats.map(c=><button key={c} onClick={()=>setCat(c)} style={{padding:"3px 10px",borderRadius:6,border:`1px solid ${cat===c?T.anna:T.border}`,background:cat===c?T.anna+"20":"transparent",color:cat===c?T.anna:T.textMuted,fontSize:10,fontWeight:600,cursor:"pointer"}}>{c}</button>)}</div>}
+      <div style={{display:"flex",gap:8}}><button onClick={submit} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.anna,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Hinzufügen</button><button onClick={()=>setOpen(false)} style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>✕</button></div>
     </div>
   );
 }
 
 function SpecialTasks({tasks,dayTasks,onAdd,onToggle,onDelete,me}){
-  const T=useContext(ThemeCtx);
-  const [open,setOpen]=useState(false);
-  const [label,setLabel]=useState("");
-  const [who,setWho]=useState("Anna");
+  const T=useContext(ThemeCtx);const [open,setOpen]=useState(false);const [label,setLabel]=useState("");const [who,setWho]=useState("Anna");
   const add=()=>{if(!label.trim())return;onAdd({label:label.trim(),who,icon:"⚡",isSpecial:true});setLabel("");setOpen(false);};
   return (
     <div style={{background:T.surface,borderRadius:20,padding:16,border:`1.5px solid ${T.special}44`}}>
       <div style={{fontSize:11,fontWeight:800,color:T.special,marginBottom:10,letterSpacing:0.5}}>⚡ SONDERTASKS</div>
       {tasks.length===0&&!open&&<div style={{fontSize:12,color:T.textMuted,textAlign:"center",padding:"4px 0",fontStyle:"italic"}}>Keine Sondertasks heute</div>}
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {tasks.map((t,i)=><TaskItem key={`special-${i}`} task={t} taskData={dayTasks[`special-${i}`]} onToggle={()=>onToggle(i)} onDelete={()=>onDelete(i)} me={me}/>)}
-      </div>
-      {open?(
-        <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
-          <input value={label} onChange={e=>setLabel(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}} placeholder="z.B. Koffer packen..." autoFocus style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,outline:"none",background:T.surfaceAlt,color:T.text}}/>
-          <div style={{display:"flex",gap:6}}>
-            {["Anna","Max","Beide"].map(w=>{const wc=w==="Anna"?T.anna:w==="Max"?T.max:T.shared;return(
-              <button key={w} onClick={()=>setWho(w)} style={{padding:"4px 12px",borderRadius:6,border:"none",background:who===w?wc:T.surfaceAlt,color:who===w?"#fff":T.textMuted,fontSize:11,fontWeight:700,cursor:"pointer"}}>{w}</button>
-            );})}
-          </div>
-          <div style={{display:"flex",gap:8}}>
-            <button onClick={add} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.special,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Hinzufügen</button>
-            <button onClick={()=>setOpen(false)} style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>✕</button>
-          </div>
-        </div>
-      ):(
-        <button onClick={()=>setOpen(true)} style={{width:"100%",padding:"8px",borderRadius:10,border:`1.5px dashed ${T.special}44`,background:"transparent",color:T.special,fontSize:12,fontWeight:700,cursor:"pointer",marginTop:8}}>+ Sondertask</button>
-      )}
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>{tasks.map((t,i)=><TaskItem key={`special-${i}`} task={t} taskData={dayTasks[`special-${i}`]} onToggle={()=>onToggle(i)} onDelete={()=>onDelete(i)} me={me}/>)}</div>
+      {open?(<div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
+        <input value={label} onChange={e=>setLabel(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")add();}} placeholder="z.B. Koffer packen..." autoFocus style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,outline:"none",background:T.surfaceAlt,color:T.text}}/>
+        <div style={{display:"flex",gap:6}}>{["Anna","Max","Beide"].map(w=>{const wc=w==="Anna"?T.anna:w==="Max"?T.max:T.shared;return <button key={w} onClick={()=>setWho(w)} style={{padding:"4px 12px",borderRadius:6,border:"none",background:who===w?wc:T.surfaceAlt,color:who===w?"#fff":T.textMuted,fontSize:11,fontWeight:700,cursor:"pointer"}}>{w}</button>;})}</div>
+        <div style={{display:"flex",gap:8}}><button onClick={add} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.special,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Hinzufügen</button><button onClick={()=>setOpen(false)} style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>✕</button></div>
+      </div>):(<button onClick={()=>setOpen(true)} style={{width:"100%",padding:"8px",borderRadius:10,border:`1.5px dashed ${T.special}44`,background:"transparent",color:T.special,fontSize:12,fontWeight:700,cursor:"pointer",marginTop:8}}>+ Sondertask</button>)}
     </div>
   );
 }
 
 function Timer({crisis}){
-  const T=useContext(ThemeCtx);
-  const total=crisis?300:600;
-  const [secs,setSecs]=useState(total);
-  const [on,setOn]=useState(false);
-  const ref=useRef(null);
+  const T=useContext(ThemeCtx);const total=crisis?300:600;const [secs,setSecs]=useState(total);const [on,setOn]=useState(false);const ref=useRef(null);
   useEffect(()=>{if(on&&secs>0)ref.current=setInterval(()=>setSecs(s=>s-1),1000);else clearInterval(ref.current);return()=>clearInterval(ref.current);},[on,secs]);
   useEffect(()=>{if(secs===0)setOn(false);},[secs]);
   const m=Math.floor(secs/60),s=secs%60,pct=1-secs/total,circ=2*Math.PI*42;
@@ -288,8 +267,7 @@ function Timer({crisis}){
 }
 
 function Notes({notes,me,onAdd}){
-  const T=useContext(ThemeCtx);
-  const [text,setText]=useState("");
+  const T=useContext(ThemeCtx);const [text,setText]=useState("");
   const send=()=>{if(!text.trim())return;onAdd({from:me,text:text.trim(),at:new Date().toISOString()});setText("");};
   return (
     <div style={{background:T.surface,borderRadius:20,padding:16,border:`1.5px solid ${T.border}`}}>
@@ -301,8 +279,7 @@ function Notes({notes,me,onAdd}){
             <div style={{fontSize:10,fontWeight:700,color:col,marginBottom:2}}>{n.from} · {new Date(n.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
             <div style={{fontSize:13,color:T.text,lineHeight:1.4}}>{n.text}</div>
           </div>
-        </div>
-      );})}
+        </div>);})}
       <div style={{display:"flex",gap:8,marginTop:8}}>
         <input value={text} onChange={e=>setText(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")send();}} placeholder="Nachricht hinterlassen..." style={{flex:1,padding:"10px 14px",borderRadius:12,border:`1.5px solid ${T.border}`,background:T.surfaceAlt,fontSize:13,color:T.text,outline:"none"}}/>
         <button onClick={send} style={{padding:"10px 16px",borderRadius:12,border:"none",background:me==="Anna"?T.anna:T.max,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>↑</button>
@@ -344,8 +321,7 @@ function RotationPanel({rotation,onDone}){
             <span style={{fontSize:18}}>{item.icon}</span><span style={{flex:1,fontSize:13,fontWeight:600,color:T.text}}>{item.label}</span>
             <span style={{fontSize:11,fontWeight:700,color:urgent?T.danger:T.textMuted}}>{days!==null?`vor ${days}d`:"noch nie"}</span>
             <button onClick={()=>onDone(item.id)} style={{padding:"5px 12px",borderRadius:8,border:"none",background:`${T.success}22`,color:T.success,fontSize:11,fontWeight:700,cursor:"pointer"}}>✓</button>
-          </div>;
-        })}
+          </div>;})}
       </div>}
     </div>
   );
@@ -353,17 +329,25 @@ function RotationPanel({rotation,onDone}){
 
 // ═══ MAIN ═══
 function App(){
-  const [dark,setDark]=useState(()=>{try{return localStorage.getItem("hh_dark")==="true";}catch{return true;}});
+  const [dark,setDark]=useState(()=>{try{return localStorage.getItem("hh_dark")!=="false";}catch{return true;}});
   const T=dark?DARK:LIGHT;
   const [me,setMe]=useState(null);
   const [weekOff,setWeekOff]=useState(0);
   const [selIdx,setSelIdx]=useState(null);
-  const [store,setStore]=useState(()=>loadAll());
-  const [rot,setRot]=useState(()=>loadRot());
   const [showConfetti,setShowConfetti]=useState(false);
   const prevProg=useRef(0);
   const today=new Date();
   const weekDates=useMemo(()=>weekDatesFor(weekOff),[weekOff]);
+  const {store,rot,ready,subscribeDays,saveDay,saveRotation}=useFirebaseData();
+
+  // Subscribe to needed days
+  useEffect(()=>{
+    const keys=[];
+    const first=weekDates[0];
+    for(let i=7;i>=1;i--){const d=new Date(first);d.setDate(first.getDate()-i);keys.push(dkey(d));}
+    weekDates.forEach(d=>keys.push(dkey(d)));
+    subscribeDays(keys);
+  },[weekOff,weekDates,subscribeDays]);
 
   useEffect(()=>{const idx=weekDates.findIndex(d=>sameDay(d,today));setSelIdx(idx>=0?idx:0);},[weekOff]);
   useEffect(()=>{try{localStorage.setItem("hh_dark",dark);}catch{}},[dark]);
@@ -387,15 +371,10 @@ function App(){
 
   useEffect(()=>{if(progress===1&&prevProg.current<1&&totalCount>0){setShowConfetti(true);setTimeout(()=>setShowConfetti(false),4000);}prevProg.current=progress;},[progress,totalCount]);
 
-  const save=useCallback(updates=>{
-    const nd={...dd,...updates};
-    const ns={...store,[dayKey]:nd};
-    setStore(ns);saveAll(ns);
-  },[dayKey,dd,store]);
-
+  const save=useCallback(updates=>{const nd={...dd,...updates};saveDay(dayKey,nd);},[dayKey,dd,saveDay]);
   const toggle=useCallback(id=>{const cur=dd.tasks[id],nt={...dd.tasks};if(cur?.done)delete nt[id];else nt[id]={done:true,by:me,at:new Date().toISOString()};save({tasks:nt});},[dd,me,save]);
   const addNote=useCallback(note=>{save({notes:[...(dd.notes||[]),note]});},[dd,save]);
-  const rotDone=useCallback(id=>{const nr={...rot,[id]:new Date().toISOString()};setRot(nr);saveRot(nr);},[rot]);
+  const rotDone=useCallback(id=>{const nr={...rot,[id]:new Date().toISOString()};saveRotation(nr);},[rot,saveRotation]);
   const addCustom=useCallback(task=>{save({customTasks:[...(dd.customTasks||[]),task]});},[dd,save]);
   const delCustom=useCallback(idx=>{const ct=[...(dd.customTasks||[])];ct.splice(idx,1);const nt={...dd.tasks};delete nt[`custom-${idx}`];save({customTasks:ct,tasks:nt});},[dd,save]);
   const addSpecial=useCallback(task=>{save({specialTasks:[...(dd.specialTasks||[]),task]});},[dd,save]);
@@ -405,6 +384,7 @@ function App(){
   const myCol=me==="Anna"?T.anna:T.max,myBg=me==="Anna"?T.annaBg:T.maxBg;
 
   if(!me)return <ThemeCtx.Provider value={T}><PersonSelect onPick={setMe}/></ThemeCtx.Provider>;
+  if(!ready)return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:T.bg,fontFamily:"'Nunito',sans-serif"}}><div style={{fontSize:40,animation:"pulse 1.5s infinite"}}>🏠</div></div>;
 
   const groups=[];
   const addGroup=(tasks,sec)=>{const cats={};tasks.forEach(t=>{if(!cats[t.cat])cats[t.cat]=[];cats[t.cat].push(t);});Object.entries(cats).forEach(([cat,ts])=>groups.push({cat,sec,tasks:ts}));};
@@ -415,17 +395,14 @@ function App(){
     <ThemeCtx.Provider value={T}>
     <div style={{minHeight:"100vh",background:T.bg,fontFamily:"'Nunito',sans-serif",color:T.text,maxWidth:480,margin:"0 auto",paddingBottom:48}}>
       <Confetti active={showConfetti}/>
-
-      {/* HEADER */}
       <div style={{padding:"14px 20px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,background:T.bg,zIndex:10,borderBottom:`1px solid ${T.border}`}}>
         <h1 style={{fontSize:20,fontWeight:900,margin:0}}>🏠 Haushalt</h1>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <button onClick={()=>setDark(!dark)} style={{width:36,height:36,borderRadius:10,border:`1.5px solid ${T.border}`,background:T.surfaceAlt,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}} title="Theme">{dark?"☀️":"🌙"}</button>
+          <button onClick={()=>setDark(!dark)} style={{width:36,height:36,borderRadius:10,border:`1.5px solid ${T.border}`,background:T.surfaceAlt,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{dark?"☀️":"🌙"}</button>
           <button onClick={()=>setMe(null)} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:10,border:`2px solid ${myCol}`,background:myBg,color:myCol,fontWeight:700,fontSize:13,cursor:"pointer"}}>{me==="Anna"?"👩":"👨"} {me}</button>
         </div>
       </div>
 
-      {/* WEEK NAV */}
       <div style={{position:"sticky",top:55,background:T.bg,zIndex:9,borderBottom:`1px solid ${T.border}`}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 16px 0"}}>
           <button onClick={()=>setWeekOff(w=>w-1)} style={{width:32,height:32,borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:16,color:T.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
@@ -438,7 +415,7 @@ function App(){
         <div style={{display:"flex",gap:4,padding:"8px 16px 10px",overflowX:"auto"}}>
           {weekDates.map((d,i)=>{
             const sel=i===selIdx,isT=sameDay(d,today),key=dkey(d),dd2=store[key],dayAway=dd2?.away;
-            const hasDone=dd2&&Object.values(dd2.tasks||{}).some(t=>t.done);
+            const hasDone=dd2&&dd2.tasks&&Object.values(dd2.tasks).some(t=>t.done);
             const dayCarry=getCarryover(d,store),hasCarry=dayCarry.length>0;
             return (
               <button key={i} onClick={()=>setSelIdx(i)} style={{flex:1,minWidth:42,padding:"6px 2px 8px",borderRadius:12,border:sel?`2px solid ${myCol}`:isT?`2px solid ${myCol}44`:"2px solid transparent",background:sel?myCol+"15":dayAway?T.awayBg:"transparent",cursor:"pointer",fontFamily:"'Nunito',sans-serif",display:"flex",flexDirection:"column",alignItems:"center",gap:1,transition:"all 0.15s"}}>
@@ -448,22 +425,15 @@ function App(){
                   {hasDone&&!dayAway&&<div style={{width:5,height:5,borderRadius:"50%",background:sel?myCol:T.success}}/>}
                   {hasCarry&&!dayAway&&<div style={{width:5,height:5,borderRadius:"50%",background:T.carry}}/>}
                 </div>
-              </button>
-            );
+              </button>);
           })}
         </div>
       </div>
 
       <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:16,marginTop:16}}>
-        {/* DAY HEADER */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div>
-            <h2 style={{fontSize:20,fontWeight:900,margin:0}}>{DAY_FULL[dow]}</h2>
-            <span style={{fontSize:12,color:T.textMuted,fontWeight:600}}>
-              {selDate.toLocaleDateString("de-DE",{day:"numeric",month:"long"})}
-              {isOffice&&!isAway&&<span style={{color:T.warn,fontWeight:700,marginLeft:8}}>📍 Office</span>}
-            </span>
-          </div>
+          <div><h2 style={{fontSize:20,fontWeight:900,margin:0}}>{DAY_FULL[dow]}</h2>
+            <span style={{fontSize:12,color:T.textMuted,fontWeight:600}}>{selDate.toLocaleDateString("de-DE",{day:"numeric",month:"long"})}{isOffice&&!isAway&&<span style={{color:T.warn,fontWeight:700,marginLeft:8}}>📍 Office</span>}</span></div>
           {isAway?<div style={{fontSize:13,fontWeight:800,color:T.away,background:T.awayBg,padding:"6px 14px",borderRadius:10}}>✈️ Abwesend</div>
           :progress===1&&totalCount>0?<div style={{fontSize:13,fontWeight:800,color:T.success,background:T.successLight,padding:"6px 14px",borderRadius:10,animation:"pulse 1.5s infinite"}}>🎉 Erledigt!</div>
           :<div style={{fontSize:14,fontWeight:800,color:myCol,background:myCol+"15",padding:"5px 14px",borderRadius:10}}>{doneCount}/{totalCount}</div>}
@@ -471,7 +441,6 @@ function App(){
 
         {!isAway&&<div style={{height:7,background:T.surfaceAlt,borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,background:progress===1?T.success:`linear-gradient(90deg,${myCol},${myCol}cc)`,width:`${progress*100}%`,transition:"width 0.5s ease"}}/></div>}
 
-        {/* AWAY */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:isAway?T.awayBg:T.surfaceAlt,borderRadius:14,padding:"12px 16px",border:isAway?`2px solid ${T.away}44`:`1.5px solid ${T.border}`}}>
           <span style={{fontSize:13,fontWeight:700,color:isAway?T.away:T.textMuted}}>✈️ Abwesend</span>
           <button onClick={()=>save({away:!dd.away})} style={{padding:"6px 18px",borderRadius:8,border:"none",background:isAway?T.away:T.surfaceAlt,color:isAway?"#fff":T.textMuted,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAway?"Ja":"Nein"}</button>
@@ -482,8 +451,8 @@ function App(){
         {!isAway&&<>
           <div style={{background:T.surface,borderRadius:16,padding:12,border:`1.5px solid ${T.border}`}}>
             <div style={{fontSize:11,fontWeight:800,color:T.textMuted,marginBottom:6,letterSpacing:0.5}}>⚡ ENERGY LEVEL</div>
-            <LevelCtrl person="Anna" level={dd.lA} color={T.anna} onChange={l=>save({lA:l})}/>
-            <LevelCtrl person="Max" level={dd.lB} color={T.max} onChange={l=>save({lB:l})}/>
+            <LevelCtrl person="Anna" level={dd.lA||0} color={T.anna} onChange={l=>save({lA:l})}/>
+            <LevelCtrl person="Max" level={dd.lB||0} color={T.max} onChange={l=>save({lB:l})}/>
           </div>
 
           {crisis&&<div style={{background:`${T.danger}15`,border:`2px solid ${T.danger}44`,borderRadius:16,padding:18,textAlign:"center"}}><div style={{fontSize:28}}>🚨</div><div style={{fontSize:15,fontWeight:900,color:T.danger,marginTop:4}}>KRISENMODUS</div><div style={{fontSize:12,color:T.textMuted,marginTop:6,lineHeight:1.5}}>Nur Küche minimal + Müll sichern + 5 min Reset</div></div>}
@@ -492,7 +461,7 @@ function App(){
 
           {(dow===6||dow===0)&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.sharedLight,borderRadius:14,padding:"12px 16px"}}><span style={{fontSize:13,fontWeight:700,color:T.shared}}>🛏️ Bettwäsche-Woche?</span><button onClick={()=>save({bed:!dd.bed})} style={{padding:"6px 18px",borderRadius:8,border:"none",background:dd.bed?T.shared:T.surfaceAlt,color:dd.bed?"#fff":T.textMuted,fontWeight:700,fontSize:13,cursor:"pointer"}}>{dd.bed?"Ja":"Nein"}</button></div>}
 
-          {dd.bed&&(dow===6||dow===0)&&<div style={{display:"flex",flexDirection:"column",gap:6}}><div style={{fontSize:11,fontWeight:800,color:T.shared,padding:"0 4px",letterSpacing:0.5}}>🛏️ BETTWÄSCHE</div><TaskItem task={{id:"bed-a",label:"Abziehen",who:"Anna",icon:"🛏️"}} taskData={dd.tasks["bed-a"]} onToggle={()=>toggle("bed-a")} me={me}/><TaskItem task={{id:"bed-b",label:"Neu beziehen",who:"Max",icon:"🛏️"}} taskData={dd.tasks["bed-b"]} onToggle={()=>toggle("bed-b")} me={me}/></div>}
+          {dd.bed&&(dow===6||dow===0)&&<div style={{display:"flex",flexDirection:"column",gap:6}}><div style={{fontSize:11,fontWeight:800,color:T.shared,padding:"0 4px",letterSpacing:0.5}}>🛏️ BETTWÄSCHE</div><TaskItem task={{id:"bed-a",label:"Abziehen",who:"Anna",icon:"🛏️"}} taskData={(dd.tasks||{})["bed-a"]} onToggle={()=>toggle("bed-a")} me={me}/><TaskItem task={{id:"bed-b",label:"Neu beziehen",who:"Max",icon:"🛏️"}} taskData={(dd.tasks||{})["bed-b"]} onToggle={()=>toggle("bed-b")} me={me}/></div>}
 
           {groups.map((g,gi)=>(
             <div key={gi} style={{display:"flex",flexDirection:"column",gap:6}}>
@@ -501,21 +470,18 @@ function App(){
                 {g.sec==="weekly"&&<span style={{fontSize:10,fontWeight:600,color:T.textMuted}}>(Hauptaufgabe)</span>}
                 {g.sec==="carry"&&<span style={{fontSize:10,fontWeight:600,color:T.carry}}>(offen)</span>}
               </div>
-              {g.tasks.map((t,ti)=>(
-                <TaskItem key={t.id} task={t} taskData={dd.tasks[t.id]} onToggle={()=>toggle(t.id)} onDelete={t.isCustom?()=>delCustom(parseInt(t.id.split("-")[1])):undefined} me={me}/>
-              ))}
+              {g.tasks.map((t)=><TaskItem key={t.id} task={t} taskData={(dd.tasks||{})[t.id]} onToggle={()=>toggle(t.id)} onDelete={t.isCustom?()=>delCustom(parseInt(t.id.split("-")[1])):undefined} me={me}/>)}
             </div>
           ))}
 
           <AddTaskInline cats={allCats} onAdd={addCustom}/>
-          <SpecialTasks tasks={specialTasks} dayTasks={dd.tasks} onAdd={addSpecial} onToggle={togSpecial} onDelete={delSpecial} me={me}/>
+          <SpecialTasks tasks={specialTasks} dayTasks={dd.tasks||{}} onAdd={addSpecial} onToggle={togSpecial} onDelete={delSpecial} me={me}/>
           <Timer crisis={crisis}/>
         </>}
 
         <Notes notes={dd.notes} me={me} onAdd={addNote}/>
         <WeekStats weekDates={weekDates} store={store}/>
         {!isAway&&<RotationPanel rotation={rot} onDone={rotDone}/>}
-
         <div style={{textAlign:"center",padding:"24px 0 8px",fontSize:11,color:T.textMuted,lineHeight:1.8}}>Daily &gt; alles andere · Kein Aufholen · Kein Perfektionismus</div>
       </div>
     </div>
