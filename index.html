@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#131316">
+<title>🏠 Haushalt</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSGF1c2hhbHQiLCJzaG9ydF9uYW1lIjoiSGF1c2hhbHQiLCJzdGFydF91cmwiOiIuIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzEzMTMxNiIsInRoZW1lX2NvbG9yIjoiIzEzMTMxNiJ9">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+var db=null;
+try{
+  firebase.initializeApp({apiKey:"AIzaSyA45UGJkppR3vszWZbEWNsciv_Mb6t_hDQ",authDomain:"haushalt-1479a.firebaseapp.com",databaseURL:"https://haushalt-1479a-default-rtdb.europe-west1.firebasedatabase.app",projectId:"haushalt-1479a",storageBucket:"haushalt-1479a.firebasestorage.app",messagingSenderId:"260012660750",appId:"1:260012660750:web:83c0ece12a0eab2c97c45f"});
+  db=firebase.database();
+}catch(e){console.warn("Firebase unavailable:",e);}
+</script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;overflow-x:hidden}
+::-webkit-scrollbar{display:none}
+@keyframes confettiDrop{0%{transform:translateY(0) rotate(0deg) scale(1);opacity:1}100%{transform:translateY(420px) rotate(720deg) scale(.3);opacity:0}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+input,button,textarea{font-family:'Nunito',sans-serif}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback,useMemo,createContext,useContext}=React;
+
+const CORRECT_PIN="1234";
+const LIGHT={bg:"#FAF6F1",surface:"#FFFFFF",surfaceAlt:"#F3EDE6",text:"#2D2A26",textMuted:"#8A8580",border:"#E8E2DA",anna:"#C17950",annaLight:"#F5E6DA",annaBg:"#FDF5EF",max:"#5B8A72",maxLight:"#D4E8DC",maxBg:"#F0F7F3",robot:"#7E8B97",shared:"#9B7DC4",sharedLight:"#EDE5F5",success:"#7CB342",successLight:"#E8F5D4",danger:"#D4644A",warn:"#E6A23C",warnLight:"#FDF0DB",carry:"#7B68AE",carryBg:"#F4F0FA",away:"#90A4AE",awayBg:"#ECEFF1",awayLight:"#CFD8DC",special:"#E67E22",specialBg:"#FEF5EC"};
+const DARK={bg:"#131316",surface:"#1E1E22",surfaceAlt:"#27272C",text:"#E4E0DB",textMuted:"#8E8A85",border:"#3A3A40",anna:"#D4895F",annaLight:"#3D2A1E",annaBg:"#2A1F18",max:"#6FA988",maxLight:"#1E3028",maxBg:"#182620",robot:"#8E9AA6",shared:"#A98BD4",sharedLight:"#2A2440",success:"#8EC651",successLight:"#1E2E14",danger:"#E0705A",warn:"#F0AE4A",warnLight:"#332A18",carry:"#8E7CC0",carryBg:"#221E30",away:"#78909C",awayBg:"#1E2428",awayLight:"#2C3438",special:"#F0912E",specialBg:"#2A2010"};
+const ThemeCtx=createContext(DARK);
+
+const DAILY=[
+  {id:"robot-kitchen",label:"Küche saugen",who:"robot",cat:"Saugroboter",icon:"🤖"},
+  {id:"robot-bath",label:"Bad saugen",who:"robot",cat:"Saugroboter",icon:"🤖"},
+  {id:"a-counter",label:"Arbeitsfläche frei",who:"Anna",cat:"Küche",icon:"🧹"},
+  {id:"a-dishes",label:"Geschirr regeln",who:"Anna",cat:"Küche",icon:"🍽️"},
+  {id:"a-sink",label:"Spüle frei",who:"Anna",cat:"Küche",icon:"🚿"},
+  {id:"b-trash-check",label:"Eimer checken",who:"Max",cat:"Müll",icon:"🗑️"},
+  {id:"b-trash-empty",label:"wenn voll → leeren + rausbringen",who:"Max",cat:"Müll",icon:"🗑️"},
+  {id:"b-laundry-collect",label:"sammeln",who:"Max",cat:"Wäsche",icon:"👕"},
+  {id:"b-laundry-wash",label:"waschen",who:"Max",cat:"Wäsche",icon:"🧺"},
+  {id:"b-laundry-hang",label:"aufhängen",who:"Max",cat:"Wäsche",icon:"📎"},
+  {id:"b-laundry-take",label:"abnehmen",who:"Max",cat:"Wäsche",icon:"📦"},
+];
+const WEEKLY={
+  1:[{id:"mon-a-kitchen",label:"Küche gründlich",who:"Anna",cat:"Hauptaufgabe",icon:"🧽",main:true},{id:"mon-b-trash",label:"Müll komplett",who:"Max",cat:"Hauptaufgabe",icon:"🗑️",main:true}],
+  2:[{id:"tue-a-laundry",label:"Wäsche sortieren / kleine Maschine",who:"Anna",cat:"Hauptaufgabe",icon:"👕",main:true}],
+  3:[{id:"wed-a-office",label:"Büro: Ordnung",who:"Anna",cat:"Hauptaufgabe",icon:"🗂️",main:true},{id:"wed-b-chaos",label:"Chaoszone aufräumen",who:"Max",cat:"Hauptaufgabe",icon:"🌀",main:true}],
+  4:[{id:"thu-a-toilet",label:"Toilette",who:"Anna",cat:"Bad",icon:"🚽",main:true},{id:"thu-b-sink",label:"Waschbecken + Spiegel",who:"Max",cat:"Bad",icon:"🪞",main:true}],
+  5:[{id:"fri-b-vacuum",label:"Staubsaugen",who:"Max",cat:"Böden",icon:"🧹",main:true},{id:"fri-a-mop",label:"Wischen",who:"Anna",cat:"Böden",icon:"🧽",main:true}],
+  6:[{id:"we-a-org",label:"Organisation (max. 45 min, 1 Bereich)",who:"Anna",cat:"Wochenende",icon:"📋",main:true},{id:"we-b-laundry",label:"Wäsche finalisieren",who:"Max",cat:"Wochenende",icon:"👕",main:true},{id:"we-b-closet",label:"in Schrank einräumen",who:"Max",cat:"Wochenende",icon:"🗄️",main:true},{id:"we-b-glass",label:"Müll / Altglas prüfen",who:"Max",cat:"Wochenende",icon:"♻️",main:true}],
+  0:[{id:"su-a-org",label:"Organisation (max. 45 min, 1 Bereich)",who:"Anna",cat:"Wochenende",icon:"📋",main:true},{id:"su-b-laundry",label:"Wäsche finalisieren",who:"Max",cat:"Wochenende",icon:"👕",main:true},{id:"su-b-closet",label:"in Schrank einräumen",who:"Max",cat:"Wochenende",icon:"🗄️",main:true},{id:"su-b-glass",label:"Müll / Altglas prüfen",who:"Max",cat:"Wochenende",icon:"♻️",main:true}],
+};
+const ROTATION=[{id:"rot-fridge",label:"Kühlschrank",icon:"🧊"},{id:"rot-oven",label:"Backofen",icon:"🔥"},{id:"rot-windows",label:"Fenster",icon:"🪟"},{id:"rot-storage",label:"Abstellraum",icon:"📦"},{id:"rot-wardrobe",label:"Kleiderschrank",icon:"👔"},{id:"rot-shower",label:"Dusche tief",icon:"🚿"},{id:"rot-paperwork",label:"Papierkram",icon:"📄"}];
+const DN=["So","Mo","Di","Mi","Do","Fr","Sa"],DF=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const LL=["Stabil","Angeschlagen","Überfordert","Ausfall"],LC=["#7CB342","#E6A23C","#D4644A","#8B0000"];
+const dk=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const sd=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+function wdf(off){const n=new Date(),dy=n.getDay(),m=new Date(n);m.setDate(n.getDate()-((dy+6)%7)+off*7);return Array.from({length:7},(_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return d;});}
+
+// Sanitize data from Firebase - ensures valid structure
+function sanitize(raw){
+  if(!raw||typeof raw!=="object") return mkEmpty();
+  return {
+    tasks:(raw.tasks&&typeof raw.tasks==="object")?raw.tasks:{},
+    lA:typeof raw.lA==="number"?raw.lA:0,
+    lB:typeof raw.lB==="number"?raw.lB:0,
+    offWed:!!raw.offWed, offThu:!!raw.offThu, bed:!!raw.bed, away:!!raw.away,
+    notes:Array.isArray(raw.notes)?raw.notes:[],
+    customTasks:Array.isArray(raw.customTasks)?raw.customTasks:[],
+    specialTasks:Array.isArray(raw.specialTasks)?raw.specialTasks:[],
+  };
+}
+function mkEmpty(){return{tasks:{},lA:0,lB:0,offWed:false,offThu:false,bed:false,notes:[],away:false,customTasks:[],specialTasks:[]};}
+
+function buildTasks(dow,lA,lB,isOff){
+  let d=DAILY.map(t=>({...t})),w=(WEEKLY[dow]||[]).map(t=>({...t}));
+  const cr=lA>=2&&lB>=2;
+  if(cr){d=d.filter(t=>["a-counter","a-dishes","a-sink","b-trash-check","b-trash-empty"].includes(t.id));return{daily:d,weekly:[],crisis:true};}
+  if(dow===4&&isOff)w=w.map(t=>({...t,who:"Anna",note:"Anna übernimmt (Office)"}));
+  [["Anna",lA],["Max",lB]].forEach(([p,lv])=>{
+    if(lv===1)w=w.map(t=>t.who===p?{...t,optional:true,note:"Optional (Level 1)"}:t);
+    else if(lv===2){d=d.map(t=>t.who===p?{...t,optional:true,note:"Mini oder nichts"}:t);w=w.map(t=>t.who===p?{...t,skipped:true,note:"Übersprungen (Level 2)"}:t);}
+    else if(lv===3){d=d.map(t=>t.who===p?{...t,skipped:true,note:"Ausfall"}:t);w=w.map(t=>t.who===p?{...t,skipped:true,note:"Ausfall"}:t);}
+  });return{daily:d,weekly:w,crisis:false};
+}
+
+function getCarry(sel,st){
+  const res=[],seen=new Set();
+  for(let i=1;i<=7;i++){
+    const p=new Date(sel);p.setDate(sel.getDate()-i);const pk=dk(p),pd=st[pk];
+    if(!pd||pd.away)continue;
+    const pdow=p.getDay(),io=pdow===2||(pdow===3&&pd.offWed)||(pdow===4&&pd.offThu);
+    const{weekly}=buildTasks(pdow,pd.lA||0,pd.lB||0,io);
+    for(const t of weekly){if(t.skipped||seen.has(t.id))continue;let done=false;
+      for(let j=0;j<=i;j++){const cd=new Date(p);cd.setDate(p.getDate()+j);const c=st[dk(cd)];if(c&&c.tasks&&c.tasks[t.id]&&c.tasks[t.id].done){done=true;break;}}
+      if(!done){seen.add(t.id);res.push({...t,note:`⏩ von ${DF[pdow]}`,isCarryover:true,cat:"Mitgezogen"});}}
+  }return res;
+}
+
+// ══════ STORAGE with error recovery ══════
+function useStore(){
+  const[store,setStore]=useState({});
+  const[rot,setRot]=useState({});
+  const[ready,setReady]=useState(false);
+  const[err,setErr]=useState(null);
+  const subs=useRef(new Set());
+  const fb=!!db;
+
+  useEffect(()=>{
+    if(!fb){setReady(true);return;}
+    try{
+      const ref=db.ref("rotation");
+      ref.on("value",s=>{try{setRot(s.val()||{});}catch(e){console.error("rot parse:",e);setRot({});}},e=>{console.error("rot err:",e);setRot({});});
+      return()=>ref.off();
+    }catch(e){console.error("rot init:",e);setReady(true);}
+  },[]);
+
+  const sub=useCallback(keys=>{
+    if(!fb){
+      try{const d=JSON.parse(localStorage.getItem("hh_data"))||{};const c={};keys.forEach(k=>{c[k]=sanitize(d[k]);});setStore(p=>({...p,...c}));}catch{}
+      setReady(true);return;
+    }
+    keys.forEach(k=>{
+      if(subs.current.has(k))return;
+      subs.current.add(k);
+      try{
+        db.ref("days/"+k).on("value",s=>{
+          try{const v=s.val();setStore(p=>({...p,[k]:sanitize(v)}));}
+          catch(e){console.error("day parse "+k+":",e);setStore(p=>({...p,[k]:mkEmpty()}));}
+        },e=>{console.error("day err "+k+":",e);setStore(p=>({...p,[k]:mkEmpty()}));});
+      }catch(e){console.error("sub err "+k+":",e);}
+    });
+    setReady(true);
+  },[]);
+
+  const saveDay=useCallback((k,data)=>{
+    const safe=sanitize(data);
+    setStore(p=>{const n={...p,[k]:safe};if(!fb){try{const all={};Object.keys(n).forEach(key=>{all[key]=n[key];});localStorage.setItem("hh_data",JSON.stringify(all));}catch{}}return n;});
+    if(fb){try{db.ref("days/"+k).set(safe);}catch(e){console.error("save err:",e);setErr("Speichern fehlgeschlagen");setTimeout(()=>setErr(null),3000);}}
+  },[]);
+
+  const saveRot=useCallback(data=>{
+    setRot(data);
+    if(fb){try{db.ref("rotation").set(data);}catch(e){console.error("rot save:",e);}}
+    else{try{localStorage.setItem("hh_rot",JSON.stringify(data));}catch{}}
+  },[]);
+
+  useEffect(()=>()=>{if(fb)subs.current.forEach(k=>{try{db.ref("days/"+k).off();}catch{}});},[]);
+  return{store,rot,ready,sub,saveDay,saveRot,synced:fb,err};
+}
+
+// ══════ COMPONENTS ══════
+function Confetti({active}){
+  const p=useMemo(()=>Array.from({length:40},(_,i)=>({id:i,l:Math.random()*100,dl:Math.random()*1.5,du:1.5+Math.random()*2,sz:6+Math.random()*8,e:["🎉","✨","⭐","💪","🏠","✅","🌟","💫"][Math.floor(Math.random()*8)]})),[]);
+  if(!active)return null;
+  return<div style={{position:"fixed",top:0,left:0,right:0,bottom:0,pointerEvents:"none",zIndex:999,overflow:"hidden"}}>{p.map(x=><div key={x.id} style={{position:"absolute",top:-20,left:x.l+"%",fontSize:x.sz,animation:`confettiDrop ${x.du}s ease-in ${x.dl}s forwards`}}>{x.e}</div>)}</div>;
+}
+
+function PinScreen({onUnlock}){
+  const T=useContext(ThemeCtx);const[pin,setPin]=useState("");const[err,setErr]=useState(false);
+  const check=v=>{if(v.length===4){if(v===CORRECT_PIN){try{sessionStorage.setItem("hh_auth","1");}catch{}onUnlock();}else{setErr(true);setPin("");setTimeout(()=>setErr(false),600);}}};
+  const tap=n=>{const nv=pin+n;setPin(nv);check(nv);};
+  return(<div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:28,background:T.bg,padding:24}}>
+    <div style={{fontSize:48}}>🔒</div><h2 style={{fontSize:22,fontWeight:800,color:T.text}}>PIN eingeben</h2>
+    <div style={{display:"flex",gap:12}}>{[0,1,2,3].map(i=><div key={i} style={{width:16,height:16,borderRadius:"50%",background:i<pin.length?T.anna:T.surfaceAlt,border:`2px solid ${i<pin.length?T.anna:T.border}`,transition:"all 0.15s",animation:err?"shake 0.4s":"none"}}/>)}</div>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,maxWidth:240}}>
+      {[1,2,3,4,5,6,7,8,9,null,0,"⌫"].map((n,i)=>n===null?<div key={i}/>:
+        <button key={i} onClick={()=>{if(n==="⌫")setPin(p=>p.slice(0,-1));else if(pin.length<4)tap(String(n));}}
+          style={{width:68,height:68,borderRadius:16,border:`1.5px solid ${T.border}`,background:T.surface,color:T.text,fontSize:n==="⌫"?20:24,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{n}</button>)}
+    </div>
+    {err&&<div style={{color:T.danger,fontSize:13,fontWeight:700}}>Falscher PIN</div>}
+  </div>);
+}
+
+function PersonSelect({onPick}){const T=useContext(ThemeCtx);return(
+  <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:36,background:T.bg,padding:24}}>
+    <div style={{textAlign:"center"}}><div style={{fontSize:56,marginBottom:12}}>🏠</div><h1 style={{fontSize:28,fontWeight:900,color:T.text}}>Haushalt</h1><p style={{color:T.textMuted,fontSize:15,marginTop:8,fontWeight:600}}>Wer bist du?</p></div>
+    <div style={{display:"flex",gap:24}}>{[["Anna","👩",T.anna,T.annaBg],["Max","👨",T.max,T.maxBg]].map(([n,e,c,bg])=>(
+      <button key={n} onClick={()=>onPick(n)} style={{width:140,height:150,borderRadius:24,border:`3px solid ${c}`,background:bg,cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:8,transition:"all 0.2s",boxShadow:`0 6px 20px ${c}22`}}>
+        <span style={{fontSize:40}}>{e}</span><span style={{fontSize:20,fontWeight:800,color:c}}>{n}</span></button>))}</div></div>);}
+
+function Lv({person,level,onChange,color}){const T=useContext(ThemeCtx);return(
+  <div style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",background:level>0?LC[level]+"18":"transparent",borderRadius:12,flexWrap:"wrap"}}>
+    <span style={{fontSize:14,fontWeight:800,color,minWidth:56}}>{person==="Anna"?"👩":"👨"} {person}</span>
+    <div style={{display:"flex",gap:4}}>{[0,1,2,3].map(l=><button key={l} onClick={()=>onChange(l)} style={{width:34,height:34,borderRadius:8,border:"none",background:level===l?LC[l]:T.surfaceAlt,color:level===l?"#fff":T.textMuted,fontSize:13,fontWeight:700,cursor:"pointer",boxShadow:level===l?`0 2px 8px ${LC[l]}44`:"none"}}>{l}</button>)}</div>
+    <span style={{fontSize:11,color:LC[level],fontWeight:700}}>{LL[level]}</span></div>);}
+
+function TI({task,td,onToggle,onDel,me}){const T=useContext(ThemeCtx);const done=td?.done,by=td?.by;
+  const c=task.who==="Anna"?T.anna:task.who==="Max"?T.max:task.who==="robot"?T.robot:T.shared;
+  const sk=task.skipped,cr=task.isCarryover,sp=task.isSpecial;
+  return(<div style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:done?T.success+"12":cr?T.carryBg:sp?T.specialBg:sk?T.textMuted+"08":T.surface,borderRadius:14,cursor:sk?"default":"pointer",border:`1.5px solid ${done?T.success+"44":cr?T.carry+"44":sp?T.special+"44":sk?T.textMuted+"18":T.border}`,borderLeft:cr?`4px solid ${T.carry}`:sp?`4px solid ${T.special}`:undefined,opacity:sk?.35:1}} onClick={()=>{if(!sk)onToggle();}}>
+    <div style={{width:26,height:26,borderRadius:8,flexShrink:0,border:`2.5px solid ${done?T.success:c+"55"}`,background:done?T.success:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>{done&&<span style={{color:"#fff",fontSize:15}}>✓</span>}</div>
+    <div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:600,color:done?T.textMuted:T.text,textDecoration:sk||done?"line-through":"none"}}>{task.icon} {task.label}</div>{task.note&&<div style={{fontSize:11,color:cr?T.carry:task.optional?T.warn:sp?T.special:T.textMuted,marginTop:2,fontWeight:600}}>{task.note}</div>}</div>
+    <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3,flexShrink:0}}><div style={{fontSize:10,fontWeight:800,color:c,background:c+"20",padding:"2px 8px",borderRadius:6}}>{task.who==="robot"?"BOT":task.who}</div>{done&&by&&<div style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:4,color:by==="Anna"?T.anna:T.max,background:by==="Anna"?T.annaLight:T.maxLight}}>✓ {by}</div>}</div>
+    {(task.isCustom||sp)&&onDel&&<button onClick={e=>{e.stopPropagation();onDel();}} style={{width:24,height:24,borderRadius:6,border:"none",background:T.danger+"20",color:T.danger,fontSize:14,cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>}
+  </div>);}
+
+function AddInline({cats,onAdd}){const T=useContext(ThemeCtx);const[o,setO]=useState(false);const[l,setL]=useState("");const[w,setW]=useState("Anna");const[ct,setCt]=useState(cats[0]||"");
+  if(!o)return<button onClick={()=>setO(true)} style={{width:"100%",padding:"10px",borderRadius:12,border:`1.5px dashed ${T.border}`,background:"transparent",color:T.textMuted,fontSize:13,fontWeight:600,cursor:"pointer"}}>+ Aufgabe hinzufügen</button>;
+  const go=()=>{if(!l.trim())return;onAdd({label:l.trim(),who:w,cat:ct||"Extra",icon:"📌",isCustom:true});setL("");setO(false);};
+  return(<div style={{background:T.surface,borderRadius:14,border:`1.5px solid ${T.border}`,padding:12,display:"flex",flexDirection:"column",gap:8}}>
+    <input value={l} onChange={e=>setL(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")go();}} placeholder="Aufgabe..." autoFocus style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,outline:"none",background:T.surfaceAlt,color:T.text}}/>
+    <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{["Anna","Max","Beide"].map(x=>{const xc=x==="Anna"?T.anna:x==="Max"?T.max:T.shared;return<button key={x} onClick={()=>setW(x)} style={{padding:"4px 12px",borderRadius:6,border:"none",background:w===x?xc:T.surfaceAlt,color:w===x?"#fff":T.textMuted,fontSize:11,fontWeight:700,cursor:"pointer"}}>{x}</button>;})}</div>
+    {cats.length>1&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{cats.map(c=><button key={c} onClick={()=>setCt(c)} style={{padding:"3px 10px",borderRadius:6,border:`1px solid ${ct===c?T.anna:T.border}`,background:ct===c?T.anna+"20":"transparent",color:ct===c?T.anna:T.textMuted,fontSize:10,fontWeight:600,cursor:"pointer"}}>{c}</button>)}</div>}
+    <div style={{display:"flex",gap:8}}><button onClick={go} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.anna,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Hinzufügen</button><button onClick={()=>setO(false)} style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>✕</button></div></div>);}
+
+function Special({tasks,dt,onAdd,onTog,onDel,me}){const T=useContext(ThemeCtx);const[o,setO]=useState(false);const[l,setL]=useState("");const[w,setW]=useState("Anna");
+  const go=()=>{if(!l.trim())return;onAdd({label:l.trim(),who:w,icon:"⚡",isSpecial:true});setL("");setO(false);};
+  return(<div style={{background:T.surface,borderRadius:20,padding:16,border:`1.5px solid ${T.special}44`}}>
+    <div style={{fontSize:11,fontWeight:800,color:T.special,marginBottom:10,letterSpacing:.5}}>⚡ SONDERTASKS</div>
+    {tasks.length===0&&!o&&<div style={{fontSize:12,color:T.textMuted,textAlign:"center",padding:"4px 0",fontStyle:"italic"}}>Keine Sondertasks heute</div>}
+    <div style={{display:"flex",flexDirection:"column",gap:6}}>{tasks.map((t,i)=><TI key={"s"+i} task={t} td={dt["special-"+i]} onToggle={()=>onTog(i)} onDel={()=>onDel(i)} me={me}/>)}</div>
+    {o?(<div style={{display:"flex",flexDirection:"column",gap:8,marginTop:8}}>
+      <input value={l} onChange={e=>setL(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")go();}} placeholder="z.B. Koffer packen..." autoFocus style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,fontSize:13,outline:"none",background:T.surfaceAlt,color:T.text}}/>
+      <div style={{display:"flex",gap:6}}>{["Anna","Max","Beide"].map(x=>{const xc=x==="Anna"?T.anna:x==="Max"?T.max:T.shared;return<button key={x} onClick={()=>setW(x)} style={{padding:"4px 12px",borderRadius:6,border:"none",background:w===x?xc:T.surfaceAlt,color:w===x?"#fff":T.textMuted,fontSize:11,fontWeight:700,cursor:"pointer"}}>{x}</button>;})}</div>
+      <div style={{display:"flex",gap:8}}><button onClick={go} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:T.special,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer"}}>Hinzufügen</button><button onClick={()=>setO(false)} style={{padding:"8px 12px",borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:600,fontSize:13,cursor:"pointer"}}>✕</button></div>
+    </div>):(<button onClick={()=>setO(true)} style={{width:"100%",padding:"8px",borderRadius:10,border:`1.5px dashed ${T.special}44`,background:"transparent",color:T.special,fontSize:12,fontWeight:700,cursor:"pointer",marginTop:8}}>+ Sondertask</button>)}</div>);}
+
+function Timer({crisis}){const T=useContext(ThemeCtx);const tot=crisis?300:600;const[s,setS]=useState(tot);const[on,setOn]=useState(false);const r=useRef(null);
+  useEffect(()=>{if(on&&s>0)r.current=setInterval(()=>setS(x=>x-1),1000);else clearInterval(r.current);return()=>clearInterval(r.current);},[on,s]);
+  useEffect(()=>{if(s===0)setOn(false);},[s]);const m=Math.floor(s/60),sc=s%60,pct=1-s/tot,ci=2*Math.PI*42;
+  return(<div style={{background:T.surface,borderRadius:20,padding:20,border:`1.5px solid ${T.sharedLight}`,textAlign:"center"}}>
+    <div style={{fontSize:13,fontWeight:800,color:T.shared,marginBottom:14}}>{crisis?"⚡ 5 MIN RESET":"🌙 CLOSING SHIFT"}</div>
+    <div style={{position:"relative",width:110,height:110,margin:"0 auto 16px"}}><svg width="110" height="110" style={{transform:"rotate(-90deg)"}}><circle cx="55" cy="55" r="42" fill="none" stroke={T.surfaceAlt} strokeWidth="7"/><circle cx="55" cy="55" r="42" fill="none" stroke={s===0?T.success:T.shared} strokeWidth="7" strokeDasharray={ci} strokeDashoffset={ci*(1-pct)} strokeLinecap="round" style={{transition:"stroke-dashoffset .5s"}}/></svg>
+      <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",fontSize:26,fontWeight:900,color:s===0?T.success:T.text}}>{String(m).padStart(2,"0")}:{String(sc).padStart(2,"0")}</div></div>
+    <div style={{display:"flex",gap:8,justifyContent:"center"}}><button onClick={()=>setOn(!on)} style={{padding:"10px 28px",borderRadius:12,border:"none",background:on?T.danger:T.shared,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>{on?"⏸ Pause":s===tot?"▶ Start":"▶ Weiter"}</button>
+      <button onClick={()=>{setOn(false);setS(tot);}} style={{padding:"10px 16px",borderRadius:12,border:`1.5px solid ${T.border}`,background:"transparent",color:T.textMuted,fontWeight:700,fontSize:16,cursor:"pointer"}}>↺</button></div></div>);}
+
+function Notes({notes,me,onAdd}){const T=useContext(ThemeCtx);const[t,setT]=useState("");
+  const go=()=>{if(!t.trim())return;onAdd({from:me,text:t.trim(),at:new Date().toISOString()});setT("");};
+  return(<div style={{background:T.surface,borderRadius:20,padding:16,border:`1.5px solid ${T.border}`}}>
+    <div style={{fontSize:11,fontWeight:800,color:T.textMuted,marginBottom:10}}>💬 NACHRICHTEN</div>
+    {(!notes||!notes.length)&&<div style={{fontSize:12,color:T.textMuted,textAlign:"center",padding:"8px 0",fontStyle:"italic"}}>Keine Nachrichten heute</div>}
+    {(notes||[]).map((n,i)=>{const im=n.from===me,c=n.from==="Anna"?T.anna:T.max;return(<div key={i} style={{display:"flex",flexDirection:im?"row-reverse":"row",gap:8,marginBottom:8}}><div style={{maxWidth:"80%",padding:"8px 12px",borderRadius:12,background:im?c+"20":T.surfaceAlt,border:`1px solid ${im?c+"33":T.border}`}}><div style={{fontSize:10,fontWeight:700,color:c,marginBottom:2}}>{n.from} · {new Date(n.at).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div><div style={{fontSize:13,color:T.text,lineHeight:1.4}}>{n.text}</div></div></div>);})}
+    <div style={{display:"flex",gap:8,marginTop:8}}><input value={t} onChange={e=>setT(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")go();}} placeholder="Nachricht..." style={{flex:1,padding:"10px 14px",borderRadius:12,border:`1.5px solid ${T.border}`,background:T.surfaceAlt,fontSize:13,color:T.text,outline:"none"}}/><button onClick={go} style={{padding:"10px 16px",borderRadius:12,border:"none",background:me==="Anna"?T.anna:T.max,color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}}>↑</button></div></div>);}
+
+function WS({wd,store}){const T=useContext(ThemeCtx);const td=new Date();return(
+  <div style={{background:T.surface,borderRadius:20,padding:16,border:`1.5px solid ${T.border}`}}>
+    <div style={{fontSize:11,fontWeight:800,color:T.textMuted,marginBottom:12}}>📊 WOCHENÜBERSICHT</div>
+    <div style={{display:"flex",gap:6,alignItems:"flex-end",height:80}}>{wd.map((d,i)=>{const k=dk(d),dd=store[k],dow=d.getDay();
+      if(dd&&dd.away)return<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}><div style={{width:"100%",borderRadius:6,minHeight:4,height:4,background:T.away}}/><span style={{fontSize:10,color:T.away}}>{DN[dow]}</span><span style={{fontSize:9,fontWeight:700,color:T.away}}>✈️</span></div>;
+      const{daily,weekly}=buildTasks(dow,dd?.lA||0,dd?.lB||0,false);const all=[...daily,...weekly].filter(t=>!t.skipped),dn=all.filter(t=>dd&&dd.tasks&&dd.tasks[t.id]&&dd.tasks[t.id].done).length,tot=all.length,pc=tot>0?dn/tot:0;const it=sd(d,td),iF=d>td&&!it;
+      return<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}><div style={{width:"100%",borderRadius:6,minHeight:4,height:Math.max(pc*60,4)+"px",background:pc===1?T.success:pc>0?(it?T.anna:T.warn):iF?T.surfaceAlt:T.danger+"44"}}/><span style={{fontSize:10,fontWeight:it?800:600,color:it?T.text:T.textMuted}}>{DN[dow]}</span><span style={{fontSize:9,fontWeight:700,color:pc===1?T.success:pc>0?T.warn:T.textMuted}}>{iF?"–":Math.round(pc*100)+"%"}</span></div>;})}</div></div>);}
+
+function Rot({rotation,onDone}){const T=useContext(ThemeCtx);const[o,setO]=useState(false);return(
+  <div style={{background:T.surface,borderRadius:20,overflow:"hidden",border:`1.5px solid ${T.border}`}}>
+    <button onClick={()=>setO(!o)} style={{width:"100%",padding:"14px 16px",border:"none",background:"transparent",display:"flex",alignItems:"center",justifyContent:"space-between",cursor:"pointer"}}><span style={{fontSize:13,fontWeight:800,color:T.text}}>🔁 ROTATION (1–2×/Woche)</span><span style={{fontSize:18,color:T.textMuted,transform:o?"rotate(180deg)":"none",transition:".2s"}}>▾</span></button>
+    {o&&<div style={{padding:"0 16px 16px",display:"flex",flexDirection:"column",gap:6}}>{ROTATION.map(it=>{const la=rotation[it.id],dy=la?Math.floor((Date.now()-new Date(la).getTime())/864e5):null,ur=dy!==null&&dy>=7;
+      return<div key={it.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:12,background:ur?T.danger+"12":T.surfaceAlt}}><span style={{fontSize:18}}>{it.icon}</span><span style={{flex:1,fontSize:13,fontWeight:600,color:T.text}}>{it.label}</span><span style={{fontSize:11,fontWeight:700,color:ur?T.danger:T.textMuted}}>{dy!==null?"vor "+dy+"d":"noch nie"}</span><button onClick={()=>onDone(it.id)} style={{padding:"5px 12px",borderRadius:8,border:"none",background:T.success+"22",color:T.success,fontSize:11,fontWeight:700,cursor:"pointer"}}>✓</button></div>;})}</div>}</div>);}
+
+// ══════ ERROR BOUNDARY ══════
+class EB extends React.Component{constructor(p){super(p);this.state={err:false};}
+  static getDerivedStateFromError(){return{err:true};}
+  render(){if(this.state.err)return React.createElement("div",{style:{minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20,background:"#131316",color:"#E4E0DB",fontFamily:"'Nunito',sans-serif",padding:24}},
+    React.createElement("div",{style:{fontSize:48}},"⚠️"),
+    React.createElement("h2",{style:{fontSize:20,fontWeight:800}},"Etwas ist schiefgelaufen"),
+    React.createElement("p",{style:{color:"#8E8A85",fontSize:14,textAlign:"center"}},"Wahrscheinlich korrupte Daten. Versuche den Cache zu löschen."),
+    React.createElement("button",{onClick:()=>{try{if(db)db.ref().remove();localStorage.clear();sessionStorage.clear();}catch{}window.location.reload();},style:{padding:"12px 24px",borderRadius:12,border:"none",background:"#D4644A",color:"#fff",fontWeight:700,fontSize:14,cursor:"pointer"}},"🗑️ Alle Daten löschen & neu starten"),
+    React.createElement("button",{onClick:()=>window.location.reload(),style:{padding:"12px 24px",borderRadius:12,border:"1.5px solid #3A3A40",background:"transparent",color:"#8E8A85",fontWeight:600,fontSize:14,cursor:"pointer"}},"↺ Einfach neu laden"));
+    return this.props.children;}}
+
+// ══════ MAIN ══════
+function App(){
+  const[dark,setDark]=useState(()=>{try{return localStorage.getItem("hh_dark")!=="false";}catch{return true;}});
+  const T=dark?DARK:LIGHT;
+  const[authed,setAuthed]=useState(()=>{try{return sessionStorage.getItem("hh_auth")==="1";}catch{return false;}});
+  const[me,setMe]=useState(null);const[wOff,setWOff]=useState(0);const[selI,setSelI]=useState(null);const[confetti,setConfetti]=useState(false);
+  const pp=useRef(0);const today=new Date();const wd=useMemo(()=>wdf(wOff),[wOff]);
+  const{store,rot,ready,sub,saveDay,saveRot,synced,err:syncErr}=useStore();
+
+  useEffect(()=>{const ks=[];const f=wd[0];for(let i=7;i>=1;i--){const d=new Date(f);d.setDate(f.getDate()-i);ks.push(dk(d));}wd.forEach(d=>ks.push(dk(d)));sub(ks);},[wOff,wd,sub]);
+  useEffect(()=>{const idx=wd.findIndex(d=>sd(d,today));setSelI(idx>=0?idx:0);},[wOff]);
+  useEffect(()=>{try{localStorage.setItem("hh_dark",dark);}catch{}},[dark]);
+  useEffect(()=>{document.body.style.background=T.bg;},[T]);
+
+  const sel=wd[selI??0]||today,dK=dk(sel),dd=store[dK]||mkEmpty();
+  const dow=sel.getDay(),isOff=dow===2||(dow===3&&dd.offWed)||(dow===4&&dd.offThu),isAw=dd.away;
+  const{daily,weekly,crisis}=buildTasks(dow,dd.lA||0,dd.lB||0,isOff);
+  const carry=isAw?[]:getCarry(sel,store);
+  const cust=(dd.customTasks||[]).map((t,i)=>({...t,id:"custom-"+i,isCustom:true}));
+  const spec=dd.specialTasks||[];
+  const allR=[...daily,...weekly,...carry,...cust].filter(t=>!t.skipped);
+  const allS=[...allR,...spec.map((_,i)=>({id:"special-"+i}))];
+  const dC=isAw?0:allS.filter(t=>(dd.tasks||{})[t.id]?.done).length;
+  const tC=isAw?0:allS.length;const prog=tC>0?dC/tC:0;
+
+  useEffect(()=>{if(prog===1&&pp.current<1&&tC>0){setConfetti(true);setTimeout(()=>setConfetti(false),4000);}pp.current=prog;},[prog,tC]);
+
+  const sv=useCallback(u=>{saveDay(dK,{...dd,...u});},[dK,dd,saveDay]);
+  const tog=useCallback(id=>{const c=(dd.tasks||{})[id],nt={...(dd.tasks||{})};if(c?.done)delete nt[id];else nt[id]={done:true,by:me,at:new Date().toISOString()};sv({tasks:nt});},[dd,me,sv]);
+  const addN=useCallback(n=>{sv({notes:[...(dd.notes||[]),n]});},[dd,sv]);
+  const rD=useCallback(id=>{saveRot({...rot,[id]:new Date().toISOString()});},[rot,saveRot]);
+  const addC=useCallback(t=>{sv({customTasks:[...(dd.customTasks||[]),t]});},[dd,sv]);
+  const delC=useCallback(i=>{const ct=[...(dd.customTasks||[])];ct.splice(i,1);const nt={...(dd.tasks||{})};delete nt["custom-"+i];sv({customTasks:ct,tasks:nt});},[dd,sv]);
+  const addSp=useCallback(t=>{sv({specialTasks:[...(dd.specialTasks||[]),t]});},[dd,sv]);
+  const togSp=useCallback(i=>{tog("special-"+i);},[tog]);
+  const delSp=useCallback(i=>{const st=[...(dd.specialTasks||[])];st.splice(i,1);const nt={...(dd.tasks||{})};delete nt["special-"+i];sv({specialTasks:st,tasks:nt});},[dd,sv]);
+
+  const mc=me==="Anna"?T.anna:T.max,mb=me==="Anna"?T.annaBg:T.maxBg;
+  if(!authed)return<ThemeCtx.Provider value={T}><PinScreen onUnlock={()=>setAuthed(true)}/></ThemeCtx.Provider>;
+  if(!me)return<ThemeCtx.Provider value={T}><PersonSelect onPick={setMe}/></ThemeCtx.Provider>;
+  if(!ready)return<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:T.bg}}><div style={{fontSize:40,animation:"pulse 1.5s infinite"}}>🏠</div></div>;
+
+  const grp=[];const ag=(ts,s)=>{const cs={};ts.forEach(t=>{if(!cs[t.cat])cs[t.cat]=[];cs[t.cat].push(t);});Object.entries(cs).forEach(([c,tx])=>grp.push({cat:c,sec:s,tasks:tx}));};
+  if(!isAw){ag(daily,"daily");if(weekly.length)ag(weekly,"weekly");if(carry.length)ag(carry,"carry");if(cust.length)ag(cust,"custom");}
+  const allCats=[...new Set(DAILY.map(t=>t.cat))];
+
+  return(<ThemeCtx.Provider value={T}>
+  <div style={{minHeight:"100vh",background:T.bg,fontFamily:"'Nunito',sans-serif",color:T.text,maxWidth:480,margin:"0 auto",paddingBottom:48}}>
+    <Confetti active={confetti}/>
+    {syncErr&&<div style={{position:"fixed",top:60,left:"50%",transform:"translateX(-50%)",background:T.danger,color:"#fff",padding:"8px 20px",borderRadius:10,fontSize:12,fontWeight:700,zIndex:999}}>{syncErr}</div>}
+
+    <div style={{padding:"14px 20px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,background:T.bg,zIndex:10,borderBottom:`1px solid ${T.border}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:8}}><h1 style={{fontSize:20,fontWeight:900}}>🏠 Haushalt</h1>
+        {synced?<div style={{width:8,height:8,borderRadius:"50%",background:T.success}} title="Sync"/>:<div style={{fontSize:9,color:T.warn,fontWeight:700,background:T.warnLight,padding:"2px 6px",borderRadius:4}}>lokal</div>}</div>
+      <div style={{display:"flex",gap:8,alignItems:"center"}}>
+        <button onClick={()=>setDark(!dark)} style={{width:36,height:36,borderRadius:10,border:`1.5px solid ${T.border}`,background:T.surfaceAlt,cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}>{dark?"☀️":"🌙"}</button>
+        <button onClick={()=>setMe(null)} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",borderRadius:10,border:`2px solid ${mc}`,background:mb,color:mc,fontWeight:700,fontSize:13,cursor:"pointer"}}>{me==="Anna"?"👩":"👨"} {me}</button>
+      </div>
+    </div>
+
+    <div style={{position:"sticky",top:55,background:T.bg,zIndex:9,borderBottom:`1px solid ${T.border}`}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 16px 0"}}>
+        <button onClick={()=>setWOff(w=>w-1)} style={{width:32,height:32,borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:16,color:T.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+        <span style={{fontSize:13,fontWeight:700,color:T.textMuted}}>{wd[0].toLocaleDateString("de-DE",{day:"numeric",month:"short"})} – {wd[6].toLocaleDateString("de-DE",{day:"numeric",month:"short",year:"numeric"})}</span>
+        <div style={{display:"flex",gap:4}}>{wOff!==0&&<button onClick={()=>setWOff(0)} style={{padding:"4px 10px",borderRadius:8,border:"none",background:mc+"20",color:mc,fontSize:11,fontWeight:700,cursor:"pointer"}}>Heute</button>}<button onClick={()=>setWOff(w=>w+1)} style={{width:32,height:32,borderRadius:8,border:`1.5px solid ${T.border}`,background:"transparent",cursor:"pointer",fontSize:16,color:T.textMuted,display:"flex",alignItems:"center",justifyContent:"center"}}>›</button></div>
+      </div>
+      <div style={{display:"flex",gap:4,padding:"8px 16px 10px",overflowX:"auto"}}>{wd.map((d,i)=>{
+        const sl=i===selI,it=sd(d,today),k=dk(d),d2=store[k],aw=d2&&d2.away;
+        const hd=d2&&d2.tasks&&typeof d2.tasks==="object"&&Object.values(d2.tasks).some(t=>t&&t.done);
+        const hc=getCarry(d,store).length>0;
+        return(<button key={i} onClick={()=>setSelI(i)} style={{flex:1,minWidth:42,padding:"6px 2px 8px",borderRadius:12,border:sl?`2px solid ${mc}`:it?`2px solid ${mc}44`:"2px solid transparent",background:sl?mc+"15":aw?T.awayBg:"transparent",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:1}}>
+          <span style={{fontSize:10,fontWeight:700,color:sl?mc:aw?T.away:T.textMuted}}>{aw?"✈️":DN[d.getDay()]}</span>
+          <span style={{fontSize:17,fontWeight:900,color:sl?mc:it?T.text:aw?T.away:T.textMuted}}>{d.getDate()}</span>
+          <div style={{display:"flex",gap:2,marginTop:1}}>{hd&&!aw&&<div style={{width:5,height:5,borderRadius:"50%",background:sl?mc:T.success}}/>}{hc&&!aw&&<div style={{width:5,height:5,borderRadius:"50%",background:T.carry}}/>}</div>
+        </button>);})}</div>
+    </div>
+
+    <div style={{padding:"0 16px",display:"flex",flexDirection:"column",gap:16,marginTop:16}}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div><h2 style={{fontSize:20,fontWeight:900}}>{DF[dow]}</h2><span style={{fontSize:12,color:T.textMuted,fontWeight:600}}>{sel.toLocaleDateString("de-DE",{day:"numeric",month:"long"})}{isOff&&!isAw&&<span style={{color:T.warn,fontWeight:700,marginLeft:8}}>📍 Office</span>}</span></div>
+        {isAw?<div style={{fontSize:13,fontWeight:800,color:T.away,background:T.awayBg,padding:"6px 14px",borderRadius:10}}>✈️ Abwesend</div>
+        :prog===1&&tC>0?<div style={{fontSize:13,fontWeight:800,color:T.success,background:T.successLight,padding:"6px 14px",borderRadius:10,animation:"pulse 1.5s infinite"}}>🎉 Erledigt!</div>
+        :<div style={{fontSize:14,fontWeight:800,color:mc,background:mc+"15",padding:"5px 14px",borderRadius:10}}>{dC}/{tC}</div>}
+      </div>
+
+      {!isAw&&<div style={{height:7,background:T.surfaceAlt,borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",borderRadius:4,background:prog===1?T.success:`linear-gradient(90deg,${mc},${mc}cc)`,width:prog*100+"%",transition:"width .5s"}}/></div>}
+
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:isAw?T.awayBg:T.surfaceAlt,borderRadius:14,padding:"12px 16px",border:isAw?`2px solid ${T.away}44`:`1.5px solid ${T.border}`}}>
+        <span style={{fontSize:13,fontWeight:700,color:isAw?T.away:T.textMuted}}>✈️ Abwesend</span>
+        <button onClick={()=>sv({away:!dd.away})} style={{padding:"6px 18px",borderRadius:8,border:"none",background:isAw?T.away:T.surfaceAlt,color:isAw?"#fff":T.textMuted,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isAw?"Ja":"Nein"}</button>
+      </div>
+
+      {isAw&&<div style={{background:T.awayBg,border:`2px solid ${T.awayLight}`,borderRadius:16,padding:20,textAlign:"center"}}><div style={{fontSize:32}}>✈️</div><div style={{fontSize:15,fontWeight:800,color:T.away,marginTop:6}}>Nicht zuhause</div><div style={{fontSize:12,color:T.textMuted,marginTop:6}}>Alle Aufgaben pausiert. Hauptaufgaben werden mitgezogen.</div></div>}
+
+      {!isAw&&<>
+        <div style={{background:T.surface,borderRadius:16,padding:12,border:`1.5px solid ${T.border}`}}>
+          <div style={{fontSize:11,fontWeight:800,color:T.textMuted,marginBottom:6}}>⚡ ENERGY LEVEL</div>
+          <Lv person="Anna" level={dd.lA||0} color={T.anna} onChange={l=>sv({lA:l})}/>
+          <Lv person="Max" level={dd.lB||0} color={T.max} onChange={l=>sv({lB:l})}/>
+        </div>
+
+        {crisis&&<div style={{background:T.danger+"15",border:`2px solid ${T.danger}44`,borderRadius:16,padding:18,textAlign:"center"}}><div style={{fontSize:28}}>🚨</div><div style={{fontSize:15,fontWeight:900,color:T.danger,marginTop:4}}>KRISENMODUS</div><div style={{fontSize:12,color:T.textMuted,marginTop:6}}>Nur Küche minimal + Müll sichern + 5 min Reset</div></div>}
+
+        {(dow===3||dow===4)&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.warnLight,borderRadius:14,padding:"12px 16px"}}><span style={{fontSize:13,fontWeight:700,color:T.warn}}>📍 {DF[dow]} = Office?</span><button onClick={()=>{if(dow===3)sv({offWed:!dd.offWed});else sv({offThu:!dd.offThu});}} style={{padding:"6px 18px",borderRadius:8,border:"none",background:isOff?T.warn:T.surfaceAlt,color:isOff?"#fff":T.textMuted,fontWeight:700,fontSize:13,cursor:"pointer"}}>{isOff?"Ja":"Nein"}</button></div>}
+
+        {(dow===6||dow===0)&&<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:T.sharedLight,borderRadius:14,padding:"12px 16px"}}><span style={{fontSize:13,fontWeight:700,color:T.shared}}>🛏️ Bettwäsche-Woche?</span><button onClick={()=>sv({bed:!dd.bed})} style={{padding:"6px 18px",borderRadius:8,border:"none",background:dd.bed?T.shared:T.surfaceAlt,color:dd.bed?"#fff":T.textMuted,fontWeight:700,fontSize:13,cursor:"pointer"}}>{dd.bed?"Ja":"Nein"}</button></div>}
+
+        {dd.bed&&(dow===6||dow===0)&&<div style={{display:"flex",flexDirection:"column",gap:6}}><div style={{fontSize:11,fontWeight:800,color:T.shared,padding:"0 4px"}}>🛏️ BETTWÄSCHE</div><TI task={{id:"bed-a",label:"Abziehen",who:"Anna",icon:"🛏️"}} td={(dd.tasks||{})["bed-a"]} onToggle={()=>tog("bed-a")} me={me}/><TI task={{id:"bed-b",label:"Neu beziehen",who:"Max",icon:"🛏️"}} td={(dd.tasks||{})["bed-b"]} onToggle={()=>tog("bed-b")} me={me}/></div>}
+
+        {grp.map((g,gi)=>(<div key={gi} style={{display:"flex",flexDirection:"column",gap:6}}>
+          <div style={{fontSize:11,fontWeight:800,padding:"0 4px",color:g.sec==="daily"?T.textMuted:g.sec==="carry"?T.carry:g.sec==="custom"?T.anna:mc,display:"flex",alignItems:"center",gap:6}}>
+            {g.sec==="daily"?"🔵":g.sec==="carry"?"⏩":g.sec==="custom"?"📌":"🟠"} {g.cat.toUpperCase()}
+            {g.sec==="weekly"&&<span style={{fontSize:10,fontWeight:600,color:T.textMuted}}>(Hauptaufgabe)</span>}
+            {g.sec==="carry"&&<span style={{fontSize:10,fontWeight:600,color:T.carry}}>(offen)</span>}
+          </div>
+          {g.tasks.map(t=><TI key={t.id} task={t} td={(dd.tasks||{})[t.id]} onToggle={()=>tog(t.id)} onDel={t.isCustom?()=>delC(parseInt(t.id.split("-")[1])):undefined} me={me}/>)}
+        </div>))}
+
+        <AddInline cats={allCats} onAdd={addC}/>
+        <Special tasks={spec} dt={dd.tasks||{}} onAdd={addSp} onTog={togSp} onDel={delSp} me={me}/>
+        <Timer crisis={crisis}/>
+      </>}
+
+      <Notes notes={dd.notes} me={me} onAdd={addN}/>
+      <WS wd={wd} store={store}/>
+      {!isAw&&<Rot rotation={rot} onDone={rD}/>}
+
+      <div style={{textAlign:"center",padding:"24px 0 8px",fontSize:11,color:T.textMuted}}>Daily &gt; alles andere · Kein Aufholen · Kein Perfektionismus</div>
+    </div>
+  </div></ThemeCtx.Provider>);
+}
+
+ReactDOM.render(React.createElement(EB,null,React.createElement(App)),document.getElementById("root"));
+</script>
+</body>
+</html>
